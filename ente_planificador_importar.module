@@ -1,0 +1,623 @@
+<?php
+  /**
+  * Modulo para la gestión de los entes planificadores
+  * Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+  * @file ente_planificador.module
+  * Drupal part Module to code ente planificador module
+  * Copyright 2011 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  * 
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  * 
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * @author Cenditel Merida TSU- Miguel Angel Narvaez Montilva
+  * @see http://www.cenditel.gob.ve/
+  * @see http://planificacion.cenditel.gob.ve/
+  */
+
+/*
+ * Implementation of hook_help
+ */
+function ente_planificador_importar_help($path, $arg) {
+  switch ($path) {
+  // Ayuda general para el módulo Importar Terminos
+    case 'admin/help#ente_planificador_importar':
+      $output  = '';
+      $output .= '<h3>' . t('Ayuda del modulo Ente Planificador Importar ') . '</h3>'.'<br>';
+      $output .= '<h4>' . t('Objetivo del modulo:') . '</h4>';
+      $output .= '<p>' . t('El modulo ente planificador importar tiene la funcionalidad para la importación de términos desde un archivo externo en formato .CSV del mismo se pueden subir al sistema nombre, descripción, otros campos, relación padre del termino.') . '</p>';
+
+      $output .= '<h4>' . t('Relación padre del termino:') . '</h4>';
+      $output .= '<p>' . t('para entender mejor lo que es relación padre del termino, consiste en una descendencia que un termino tiene o relación a su padre ejemplo Venezuela es un país que tiene estados y a su vez tiene municipios ejemplo Venezuela-Mérida-Libertador donde Venezuela es padre de Mérida y Mérida es padre de Libertador siendo Libertador hijo de Mérida y Mérida hija de Venezuela.') . '</p>';
+
+      $output .= '<h3>' . t('Pasos para trabajar con el modulo:') . '</h3>'.'<br>';
+      $output .= '<h4>' . t('Seleccione un Vocabulario:') . '</h4>';
+      $output .= '<p>' . t('En el modulo se presenta un formulario en el cual se desea que usted primero seleccione un vocabulario ya existente este campo es obligatorio por ello presenta un asterisco a su derecha en color rojo.') . '</p>';
+
+      $output .= '<h4>' . t('Seleccionar archivo:') . '</h4>';
+      $output .= '<p>' . t('Posteriormente se tiene que seleccionar el archivo en formato .CSV el cual tiene la información a importar al sistema.') . '</p>';
+        
+      $output .= '<h4>' . t('Columna padre del termino:') . '</h4>';
+      $output .= '<p>' . t('Si existe una relación padre del termino la misma tiene que tener una relación numérica con el tid del termino(tid = termino identificación) sabiendo esto se procede secciona la columna donde se encuentren dicha numeración relacional si existe la misma.') . '</p>';
+
+      $output .= '<h4>' . t('Columna nombre del termino:') . '</h4>';
+      $output .= '<p>' . t('Tendremos que elegir el nombre para el termino según el numero de columna donde se encuentra a continuación se presenta una numeración del 1 al 15 en la cual seleccionas la columna donde están los nombres para los términos.') . '</p>';
+
+      $output .= '<h4>' . t('Columna descripcción del termino:') . '</h4>';
+      $output .= '<p>' . t('Si existe tendremos que elegir la descripción  para el termino según el numero de columna donde se encuentra la información  a continuación se presenta una numeración del 1 al 15 en la cual seleccionas la columna donde están las descripciones para los términos.') . '</p>';
+
+      $output .= '<h4>' . t('Primera columna como encabezado:') . '</h4>';
+      $output .= '<p>' . t('En algunos casos la primera fila de los archivos CSV tiene los enunciados de lo que contiene las columna lo cual es una información que no se desea importar, si se activa la casilla no se guardaran dichos enunciados innecesarios en caso contrario de no seleccionar la casilla se guardara como un termino mas.') . '</p>';
+
+      $output .= '<h4>' . t('Importar valor de un campo:') . '</h4>';
+      $output .= '<p>' . t('En caso de poseer campos adicionales para agregarles al termino se selecciona el campo que ya este existente para agregarle información en el selector (seleccione el campo del termino) y posteriormente en el selector (seleccione la columna del archivo que posee el valor del campo) se elige el numero de columna en la cual se encuentra la información para dicho campo, en caso de existir otro campo se agregan en la opción (agregar nuevo campo) en caso de no existir mas campos esta opción desaparece.') . '</p>';
+      $output .= '<p>' . t('En caso de guardar en un campo de tipo numérico (int) se eliminaran automáticamente los siguientes caracteres que se encuentren el la columna seleccionada: "." , "," , "-" , "_" , "v" , "V" , "e" , "E" , "j" , "J" , "N" , "n" , "°" , "#" , "(" , ")" .') . '</p>';     
+
+      $output .= '<h4>' . t('Guardar:') . '</h4>';
+      $output .= '<p>' . t('Por ultimo al acceder a la opción guardar se exportaran los archivos al sistema dando un resumen de las operaciones realizadas con éxito, en caso de no seleccionar ningún archivo CSV nos arrojara el sistema un mensaje de error.') . '</p>';
+
+      $output .= '<h4>' . t('Soporte técnico') . '</h4>';
+      $output .='<p>' . t('Comunícate con nosotros por la web para soporte técnico o cualquier inquietud <a href="@cenditel">cenditel</a>.', array('@cenditel' => url('http://planificacion.cenditel.gob.ve/contactos/'))) . '</p>';
+     return $output;
+  }  
+}  
+
+/*
+ * Implementation of hook_menu()
+ */
+function ente_planificador_importar_menu() {
+  $items['ente_planificador/geo_taxonomi'] = array(
+    'title' => t('Importación de terminos mediante archivo'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_importar_form'),
+    'access callback'=> TRUE,
+    'description' => t('Importación de terminos mediante archivos '),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/*
+ * Implementation of hook_form()
+ */
+function ente_planificador_importar_form($form, &$form_state){
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+
+  $form['description'] = array(
+    '#type' => 'item',
+    '#title' => t('Seleccioanar el vocabulario y las opciones siguientes '),
+  );
+
+  /*
+   * Implementation of function taxonomy_get_vocabularies
+   */
+  $vocabulary = taxonomy_get_vocabularies();
+  $checklist_vocab_array = array(); 
+  foreach ($vocabulary as $key => $item) {
+    $checklist_vocab_array[$key] = $item->name;
+  }
+
+  
+  // form of select the vocabulary 
+  $form['vocabulary'] = array(
+    '#type'             => 'select',
+    '#default_value'    => 0 ,
+    '#required'         =>TRUE,
+    '#title'            => t('Seleccione un Vocabulario.'),
+    '#position'         => 'left' ,
+    '#options'          => array('0'=> t('none')) + $checklist_vocab_array,
+    '#description'      => t('Lista de vocabulario disponible'),
+    '#ajax' => array(
+      'callback' => 'ente_planificador_ajax1', 
+      'wrapper' => 'ajax_datos1', 
+      'effect' => 'fade',
+      'event' => 'change',
+      'method' => 'replace',
+    ),
+  );
+
+  $form['vocabulary_container'] = array(
+    '#type' => 'container', 
+    '#prefix' => '<div id="ajax_datos1">',
+    '#suffix' => '</div>',
+  );
+
+  if (isset($form_state['values']['vocabulary']) && ($form_state['values']['vocabulary'])!=0 ) {
+
+    // form of type fileupload 
+      $form['vocabulary_container']['new_upload'] = array(
+        '#type' => 'file',
+         '#title' => t('Seleccionar archivo'), 
+        '#description' => t('Archivo en formato cvs con el contenido a importar'),
+      );
+
+
+ 
+    //form select the column father of term  
+    $form['vocabulary_container']['term_father'] = array(
+      '#type' => 'numberfield', 
+      '#title' => t('Columna padre del termino '), 
+      '#default_value' =>0,
+      '#description' => t('Padre del termino en ralación con el id de la taxonomia (tid).'),
+      '#min'=> 0,
+      '#max' => 100,
+    ); 
+
+    //form select columns name of term
+    $form['vocabulary_container']['name_term'] = array(
+      '#type' => 'numberfield', 
+      '#title' => t('Columna nombre del termino'), 
+      '#default_value' =>1,
+      '#description' => t('Agregar nombre a termino.'),
+      '#min'=> 1,
+      '#max' => 100,
+    ); 
+
+    //form select columns description of term
+    $form['vocabulary_container']['description'] = array(
+      '#type' => 'numberfield', 
+      '#title' => t('Columna descripcción del termino'), 
+      '#default_value' =>0,
+      '#description' => t('descripcción de termino.'),
+      '#min'=> 0,
+      '#max' => 100,
+      
+    ); 
+
+    $form['vocabulary_container']['encabezado'] = array(
+      '#title' => 'Primera columna como encabezado',
+      '#type' => 'checkbox',
+      '#return_value' => '1',
+      '#description' => t('No guarda la primera columna, la misma pose encabezado.'),
+    );
+
+    $default = 0;
+    $values_term_field = array(0 => t('no'), 1 => t('si'));
+
+    //formulario de seleccion 
+    $form['vocabulary_container']['term_field'] = array(
+      '#type' => 'select', 
+      '#title' => t('Importar valor de un campo'), 
+      '#description' => t('Desplega lista de campos para ser agregados al termino.'),
+      '#options' => $values_term_field,
+      '#default_value' => $default,
+      '#ajax' => array(
+        'callback' => 'ente_planificador_ajax2', //funcion declarada al final y que retorna al contenedor
+        'wrapper' => 'ajax_datos2', // contenedor del formulario ajax 
+        'effect' => 'fade',
+        'method' => 'replace',
+      ),
+    ); 
+
+     $count = isset($form_state['values']['count']) ? ($form_state['values']['count'] + 1) : 0;
+    if ($form_state['triggering_element']['#name'] == 'vocabulary') {
+      $count = 0;
+      if (isset($form_state['values']['term_field']) && ($form_state['values']['term_field']) != 0) {
+	      $form_state['values']['term_field'] = 0;
+      }
+    }
+    if (isset($form_state['values']['term_field']) && $form_state['values']['term_field']==0) {
+      $count = 0;
+    }
+    //container of term_field
+    $form['vocabulary_container']['term_field_container'] = array(
+      '#type' => 'container', 
+      '#prefix' => '<div id="ajax_datos2">',
+      '#suffix' => '</div>',
+    );
+    //form type hidden  
+    $form['vocabulary_container']['term_field_container']['count'] = array(
+      '#type' => 'hidden', 
+      '#value' => $count,
+    );
+
+    if(isset($form_state['values']['term_field']) && ($form_state['values']['term_field']) != 0){
+
+      for ($i=1; $i<=$count; $i++) {  
+       $vid = $form_state['values']['vocabulary']; 
+       $vocabulary = taxonomy_vocabulary_load($vid); //load the machin name vocabulary
+       $fields = field_info_instances('taxonomy_term',$vocabulary->machine_name); //load the name of field   
+        foreach ($fields as $value) {
+          $options[$value['field_name']] = $value['label'];
+        }
+        if (isset($options)) { 
+          //container of type fieldset 
+          $form['vocabulary_container']['term_field_container']["group_$i"] = array(
+            '#title' => t('Grupo de campos @num', array('@num' => $i)), 
+            '#type' => 'fieldset', 
+            '#collapsible' =>TRUE,
+            '#collapsed' => FALSE,
+          );
+
+          //fields of term 
+          $form['vocabulary_container']['term_field_container']["group_$i"]["fields_$i"] = array(
+            '#type' => 'select', 
+            '#title' => t('Seleccione un campo'), 
+            '#default_value' =>array($i-1),
+            '#options' => $options,
+            '#description' => t('Lista de campos disponibles'),
+          ); 
+
+          //number of column in file csv to import in fiels 
+       $form['vocabulary_container']['term_field_container']["group_$i"]["data_$i"] = array(
+            '#type' => 'numberfield', 
+            '#title' => t('seleccione la columna del archivo que posee el valor del campo '), 
+            '#default_value' => 0,
+            '#description' => t('Gerarquia de taxonomia.'),
+            '#min'=> 0,
+            '#max' => 100,
+          );
+        }  
+        else{
+          $form['vocabulary_container']['term_field_container']['descriptionfail'] = array(
+            '#type' => 'item',
+            '#title' => t('El vocabulario NO posee campos para importar a los terminos'),
+          );
+        }
+      }
+    }
+  }
+  
+  if (isset($form_state['values']['term_field']) && ($form_state['values']['term_field']) != 0 && isset($options)) {
+    $countoptions = count($options); 
+    if ($i <= $countoptions ) {
+      $form['vocabulary_container']['term_field_container']['number_ajax_$i'] = array(
+        '#type' => 'button', 
+        '#value' => t('Add new field'), 
+          '#ajax' => array(
+            'callback' => 'ente_planificador_ajax2',
+            'wrapper' => 'ajax_datos2',  
+            'effect' => 'fade',
+            'method' => 'replace',
+          ),
+      );
+    }
+  }
+      
+  //submit buton 
+  $form['vocabulary_container']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Guardar',
+  );
+
+      $form['vocabulary_container']['help'] = array(
+    '#type' => 'item',
+    '#title' => t('Más <a href="@cenditel">ayuda</a>.', array('@cenditel' => url('admin/help/ente_planificador_importar'))),
+  );
+
+  return $form; 
+}
+
+/*
+ * Implementation of function ente_planificador_ajax1   
+ */
+function ente_planificador_ajax1($form, &$form_state) {
+  $form['vocabulary_container']['term_field']['#value']  = 0;
+  $form['vocabulary_container']['term_field']['#default_value']  = 0;
+  return $form['vocabulary_container'];
+}
+
+/*
+ * Implementation of function ente_planificador_ajax2 
+ */
+function ente_planificador_ajax2($form, &$form_state) {
+  return $form['vocabulary_container']['term_field_container'];
+}
+
+
+/**
+ * Implementation of ente_planificador_importar_form_submit().
+ * Submit cvs file in term import 
+ */
+function ente_planificador_importar_form_submit($form, &$form_state) {
+  global $user; 
+
+  $vid= $form_state['values']['vocabulary'];
+
+  $nombre_term = $form_state['values']['name_term'];
+
+  $validators = array('file_validate_extensions' => array('csv'));
+
+  $file = file_save_upload('new_upload', $validators);
+
+  if (isset($file)) {
+      $csv = $file->destination; //ubication of file in system
+      $namefile = $file ->filename; //name of file
+      $explode_name = explode('.',$namefile);
+      if($explode_name[1] == 'csv'){ $prueba_de_formato = 1;} else{
+      //error to load file
+      form_set_error('new_upload', t("Error al abrir archivo, formato no aceptado "));
+      drupal_goto('ente_planificador/geo_taxonomi');
+      }
+         
+    if (($file = fopen($csv, "r")) !== FALSE && isset($prueba_de_formato)) {
+      print( "archivo encontrado, analizando "."<br>");
+      
+        $batch = array(
+          'operations' => array(),
+          'finished' => 'batch_ente_planificador_finished',
+          'title' => t('Procesando archivos'),
+          'init_message' => t('Procesamiento de archivos iniciado.'),
+          'progress_message' => t('Processed @current out of @total.'),
+          'error_message' => t('Error en carga de archivos.'),
+        );
+      $j=1; 
+      while (($data = fgetcsv($file)) !== FALSE ) {
+
+          //declaration of variable
+          $field_selected = array();
+          unset($field_selected); 
+          $field_selected = array();
+          $parent = 0;
+          //$field_selected[] = 0;
+          $columna_fiels[] = 0;
+          $tipo = '';
+          $clave = '';
+           
+          
+          $tid = (isset($data[$form_state['values']['term_father']-1])) ? (int) $data[$form_state['values']['term_father']-1] : 0;
+         
+
+          if ($tid && is_numeric($tid) && $term = taxonomy_term_load($tid)) {
+            $relacionvid = $term->vid;
+            if ($vid == $relacionvid) {
+              $parent = $term->tid; 
+            }
+            else{
+              $parent = 0;
+            }
+          }
+
+          if (isset($data[$form_state['values']['name_term']-1])){
+            if($data[$form_state['values']['name_term']-1] != ''){
+              $dato_nameterm = $data[$form_state['values']['name_term']-1];//name of term
+
+              $description = (isset($data[$form_state['values']['description']-1])) ? $data[$form_state['values']['description']-1] : 0;//description of term
+            }
+          }
+             
+          for($i=1; $i<= $form_state['values']['count']; $i++) {
+                      
+            if(isset($form_state['values']['data_' . $i])){
+
+              if(isset($data[$form_state['values']['data_' . $i]-1])){
+
+                for($i=1; $i<= $form_state['values']['count']; $i++) {
+
+                  $field_selected[] = $form_state['values']['fields_'.$i]; 
+                            
+                  
+                  $field_info = field_info_field($form_state['values']['fields_'.$i]);
+              		$columns = $field_info['columns'];   
+
+              		$pos = 1;
+                  foreach ($columns as $id => $value){
+    	              if ($pos == 1) {
+                      $clave = $id; 
+              	      $tipo =  $value['type']; 
+              		  }
+  		              $pos++;
+                  }
+
+                  if ($tipo == 'int') {
+                    $caracteres = Array(".",",","-","_","v","V","e","E","j","J","N","n","°","#","(",")"); 
+                    $columna_fiels[$form_state['values']['fields_'.$i]]= (int)trim(str_replace($caracteres,"",$data[$form_state['values']['data_'.$i]-1]));   
+                  }
+                  else{
+                    $columna_fiels[$form_state['values']['fields_'.$i]]= check_plain($data[$form_state['values']['data_'.$i]-1]);
+                  }    
+                }
+              }  
+            } 
+          }
+
+        if($form_state['values']['encabezado'] == 1 && $j == 1){//elimina encabezado
+
+          
+        }
+        elseif($form_state['values']['encabezado'] == 1 && !($j == 1)){//acepta encabezado despues que $J > 1.
+
+           $batch['operations'][] = array('_batch_ente_planificador_importar', array($dato_nameterm, $vid, $parent, $namefile, $field_selected, $columna_fiels, $clave, $description)); 
+        }
+         elseif($form_state['values']['encabezado'] == 0){//acepta encabezado
+
+           $batch['operations'][] = array('_batch_ente_planificador_importar', array($dato_nameterm, $vid, $parent, $namefile, $field_selected, $columna_fiels, $clave, $description)); 
+        }
+
+        //watchdog('TEST', ' term <pre>@filename</pre>.', array('@filename' => print_r($j, 1)), WATCHDOG_ERROR); 
+        $j++;
+      } 
+    }// File upload failed
+    else{
+      form_set_error('new_upload', t("Error al abrir archivo, formato no aceptado "));
+      drupal_goto('ente_planificador/geo_taxonomi');
+    }
+  } 
+
+  batch_set($batch);
+
+  batch_process('ente_planificador/geo_taxonomi');
+}
+
+/**
+ * funtion of batch ente planificador 
+ */
+
+function _batch_ente_planificador_importar($nameterm, $vid, $parent, $namefileCSV, $field_selected, $columna_fiels, $clave, $description, &$context) {
+
+  try {
+
+    if (($field_selected) && ($columna_fiels)){
+            
+      $term = new stdClass(); 
+      $term->name = $nameterm;   
+      $term->vid = $vid; 
+      $term->description = $description;
+    
+      foreach ($field_selected as $field_name) {
+        $term->$field_name = array(
+          LANGUAGE_NONE => array(array($clave=> $columna_fiels[$field_name])),
+        );
+      }
+      $term->parent[] = $parent;  
+      taxonomy_term_save($term); 
+
+      //mensaje en registro de sistema con valores de array 
+      $context['message'] = t('Procesando la importacion de datos del archivo "@nombrearchivo"',array('@nombrearchivo' => $namefileCSV));
+      $context['results'][] = 'term importados: ' . $term->name ;//contador de terminos
+    } 
+    else{
+
+      $term = new stdClass();
+      $term->name = $nameterm;   
+      $term->vid = $vid;
+      $term->description = $description;
+      $term->parent[] = $parent;          
+      taxonomy_term_save($term);
+
+      //load of term in taxonomy 
+       $context['message'] = t('Procesando la importacion de datos del archivo "@nombrearchivo"',array('@nombrearchivo' => $namefileCSV));
+       $context['results'][] = 'term importados: ' . $term->name ;//contador de terminos
+    } 
+  } 
+  catch (Exception $e) {
+    
+    // Log the exception to watchdog.
+    watchdog_exception('Error en carga de archivos en ejecución de batch', $e);
+  }
+}
+
+/**
+ * Batch 'finished' callback used by both batch 1 and batch 2.
+ */
+function batch_ente_planificador_finished($success, $results, $operations, $dato) {
+
+  if ($success) {
+    // Here we do something meaningful with the results.
+    drupal_set_message(t('!count_webform términos agregados en su totalidad.', array('!count_webform' => count($results))));
+  }
+
+  else {
+    // An error occurred.
+    $error_operation = reset($operations);
+    drupal_set_message(t('An error occurred while processing @operation with arguments : @args'),'error');
+  }
+}
+
+/**
+*
+* implementation of form type numberfield in the module ente_planificador_importar or other module
+*
+*
+*/
+
+/**
+ * Implements hook_element_info().
+ */
+function ente_planificador_importar_element_info() {
+  $types['numberfield'] = array(
+    '#input' => TRUE,
+    '#step' => 1,
+    '#process' => array('ajax_process_form'),
+    '#element_validate' => array('ente_planificador_importar_validate_number'),
+    '#theme' => 'numberfield',
+    '#theme_wrappers' => array('form_element'),
+  );
+  return $types;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ente_planificador_importar_theme() {
+  return array(
+    'numberfield' => array(
+      'arguments' => array('element' => NULL),
+      'render element' => 'element',
+      'file' => 'ente_planificador_importar.theme.inc',
+    ),
+  );  
+}
+
+/**
+ * #process callback for #placeholder form element property.
+ *
+ * @param $element
+ *   An associative array containing the properties and children of the
+ *   generic input element.
+ *
+ * @return
+ *   The processed element.
+ */
+function ente_planificador_importar_process_placeholder($element) {
+  if (isset($element['#placeholder']) && !isset($element['#attributes']['placeholder'])) {
+    $element['#attributes']['placeholder'] = $element['#placeholder'];
+  }
+
+  return $element;
+}
+
+/**
+ * Form element validation handler for #type 'number'.
+ *
+ * Note that #required is validated by _form_validate() already.
+ */
+function ente_planificador_importar_validate_number(&$element, &$form_state) {
+  $value = $element['#value'];
+  if ($value === '') {
+    return;
+  }
+
+  $name = empty($element['#title']) ? $element['#parents'][0] : $element['#title'];
+
+  // Ensure the input is numeric.
+  if (!is_numeric($value)) {
+    form_error($element, t('%name must be a number.', array('%name' => $name)));
+    return;
+  }
+
+  // Ensure that the input is greater than the #min property, if set.
+  if (isset($element['#min']) && $value < $element['#min']) {
+    form_error($element, t('%name must be higher or equal to %min.', array('%name' => $name, '%min' => $element['#min'])));
+  }
+
+  // Ensure that the input is less than the #max property, if set.
+  if (isset($element['#max']) && $value > $element['#max']) {
+    form_error($element, t('%name must be below or equal to %max.', array('%name' => $name, '%max' => $element['#max'])));
+  }
+
+  if (isset($element['#step']) && strtolower($element['#step']) != 'any') {
+    // Check that the input is an allowed multiple of #step (offset by #min if
+    // #min is set).
+    $offset = isset($element['#min']) ? $element['#min'] : 0.0;
+
+    if (!ente_planificador_importar_valid_number_step($value, $element['#step'], $offset)) {
+      form_error($element, t('%name is not a valid number.', array('%name' => $name)));
+    }
+  }
+}
+
+
+function ente_planificador_importar_valid_number_step($value, $step, $offset = 0.0) {
+  $double_value = (double) abs($value - $offset);
+
+  if ($double_value / pow(2.0, 53) > $step) {
+    return TRUE;
+  }
+
+  $remainder = (double) abs($double_value - $step * round($double_value / $step));
+
+  $computed_acceptable_error = (double) ($step / pow(2.0, 24));
+
+  return $computed_acceptable_error >= $remainder || $remainder >= ($step - $computed_acceptable_error);
+}
