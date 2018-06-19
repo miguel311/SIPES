@@ -1,0 +1,5 @@
+name = form add
+description = example mod.
+package = customer task
+version  = VERSION
+core = 7.x

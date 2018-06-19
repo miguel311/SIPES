@@ -1,0 +1,157 @@
+<?php
+  /**
+  * Modulo para la gestión de los entes planificadores
+  * Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+  * @file ente_planificador.module
+  * Drupal part Module to code ente planificador module
+  * Copyright 2011 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  * 
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  * 
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * @author Cenditel Merida TSU- Miguel Angel Narvaez Montilva
+  * @see http://www.cenditel.gob.ve/
+  * @see http://planificacion.cenditel.gob.ve/
+  */
+
+//https://www.drupal.org/docs/7/api/field-api/adding-and-reusing-a-field
+
+/*
+ * Implementation of hook_install
+ */
+
+function ente_planificador_install() {
+
+//creando los campos
+  foreach(ente_planificador_installed_fields() as $field){
+    field_create_field($field);
+  }
+//creando las instancias de los campos
+  foreach(ente_planificador_installed_instances() as $instance){
+    field_create_instance($instance);
+  }
+
+  $module = 'Ente Planificador';
+  $message = 'El módulo '. $module .' fue instalado correctamente';
+  drupal_set_message(t($message), $type = 'status');
+}
+
+/*
+ * Implementation of hook_uninstall()
+ */
+function ente_planificador_uninstall() {
+  //elimina las instancias de los campos
+  foreach(ente_planificador_installed_instances() as $instance){
+    field_delete_instance($instance, $field_cleanup = TRUE);
+  }
+  //elimina los campos del sistema
+  foreach(ente_planificador_installed_fields() as $field){
+    field_delete_field($field);
+  }
+
+  $module = 'Ente Planificador';
+  $message = 'El módulo '. $module .' fue desinstalado correctamente el modulo ente planificador';
+  drupal_set_message(t($message), $type = 'status');
+}
+
+/*
+ * Implementation of function ente_planificador_installed_fields
+ */
+
+function ente_planificador_installed_fields(){
+  $t = get_t();
+  return array(
+    'field_razon_social' => array(
+      'field_name' => 'field_razon_social',
+      'type' => 'text',
+      'cardinality' => 1,
+      ),
+    'field_rif' => array(
+      'field_name' => 'field_rif',
+      'type' => 'text',
+      'cardinality' => 1,
+      ),
+    'field_codigo' => array(
+      'field_name' => 'field_codigo',
+      'type' => 'text',
+      'cardinality' => 1,
+      ),
+    'field_acronimo' => array(
+      'field_name' => 'field_acronimo',
+      'type' => 'text',
+      'cardinality' => 1,
+      ),
+  );
+}
+
+/*
+ * Implementation of function ente_planificador_installed_instances
+ */
+
+function ente_planificador_installed_instances(){
+  $t = get_t();
+  return array(
+    'field_razon_social' => array(
+      'field_name' => 'field_razon_social',
+      'label' => $t('Ente Planificador'),
+      'entity_type' => 'node',
+      'bundle' => 'ente_planificador',
+      'description' => t('razon social del ente planificador'),
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+        'weight' => 10,
+      ),
+    ),
+
+    'field_rif' => array(
+      'field_name' => 'field_rif',
+      'label' => $t('Rif del ente'),
+      'entity_type' => 'node',
+      'bundle' => 'ente_planificador',
+      'description' => t('Rif del ente planificador'),
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+        'weight' => 10,
+      ),
+    ),
+
+    'field_codigo' => array(
+      'field_name' => 'field_codigo',
+      'label' => $t('Codigo onapre'),
+      'entity_type' => 'node',
+      'bundle' => 'ente_planificador',
+      'description' => t('Codigo onapre del ente planificador'),
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+        'weight' => 10,
+      ),
+    ),
+
+    'field_acronimo' => array(
+      'field_name' => 'field_acronimo',
+      'label' => $t('Acronimo del ente'),
+      'entity_type' => 'node',
+      'bundle' => 'ente_planificador',
+      'description' => t('Acronimo del ente planificador'),
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+        'weight' => 10,
+      ),
+    ),
+  );
+}

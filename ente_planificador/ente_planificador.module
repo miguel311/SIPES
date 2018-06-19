@@ -1,0 +1,98 @@
+<?php
+  /**
+  * Modulo para la gestión de los entes planificadores
+  * Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+  * @file ente_planificador.module
+  * Drupal part Module to code ente planificador module
+  * Copyright 2011 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  * 
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  * 
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * @author Cenditel Merida TSU- Miguel Angel Narvaez Montilva
+  * @see http://www.cenditel.gob.ve/
+  * @see http://planificacion.cenditel.gob.ve/
+  */
+
+
+/*
+ * Implementation of hook permission()
+ */
+// permisos administrativos para acceder al modulo 
+function ente_planificador_permission() {
+  return array(
+    'access to system entes planificador' => array(
+      'title' => t('Acceso al modulo Ente Planificador'),
+      'description' => t('Posibilidad de acceder a trabajar con el modulo ente planificador y las funcionalidades incorparadas en el mismo.'),
+    ),
+  );
+}
+
+/*
+ * Implementation of hook_help
+ */
+// ayuda del modulo 
+function ente_planificador_help($path, $arg) {
+  switch ($path) {
+  // Ayuda general para el módulo Importar Terminos
+    case 'admin/help#ente_planificador':
+      $output  = '';
+      $output .= '<h3>' . t('Ayuda del modulo Ente planificador ') . '</h3>'.'<br>';
+      $output .= '<h4>' . t('Objetivo del modulo:') . '</h4>';
+      $output .= '<p>' . t('Proximamente más contenido.') . '</p>';
+
+      $output .= '<h4>' . t('Soporte técnico') . '</h4>';
+      $output .='<p>' . t('Comunícate con nosotros por la web para soporte técnico o cualquier inquietud <a href="@cenditel">cenditel</a>.', array('@cenditel' => url('http://planificacion.cenditel.gob.ve/contactos/'))) . '</p>';
+    return $output;
+  }  
+}
+
+//se crea el tipo de contenido ente planificador con el hook_node_info & hook_form
+/*
+ * Implementation of hook_node_info()
+ */
+function ente_planificador_node_info() {
+  return array(
+    'ente_planificador' => array(
+      'name' => t('Ente Planificador'),
+      'base' => 'ente_planificador',
+      'description' => t('Ente planificador para Drupal 7.'),
+    ),
+  );
+}
+
+
+/*
+ * implementation of hook]_menu()
+ */
+function ente_planificador_menu(){
+  $items['ente_planificador'] = array(    // <-- enlace url al modulo 
+    'title' => t('Ente Planificador'), // <-- titulo de hipervinculo en panel 
+    'page callback' => 'drupal_get_form', 
+    'page arguments' => array('Sistema Ente planificador'),
+    //'access callback'=> TRUE,
+    'access arguments' => array('access to system entes planificador'), //acceso restringido por hook  permission
+    'description' => t('Systema Ente Planificador'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+/*
+ * Implementation of hook_form()
+ */
+function ente_planificador_form(&$node, $form_state) {
+  return node_content_form($node, $form_state);
+}
