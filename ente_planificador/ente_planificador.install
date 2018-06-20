@@ -20,7 +20,7 @@
   * along with this program; if not, write to the Free Software
   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   *
-  * @author Cenditel Merida TSU- Miguel Angel Narvaez Montilva
+  * @author Cenditel Mérida TSU- Miguel Angel Narvaez Montilva
   * @see http://www.cenditel.gob.ve/
   * @see http://planificacion.cenditel.gob.ve/
   */
@@ -35,22 +35,28 @@ function ente_planificador_install() {
 
 //creando los campos
   foreach(ente_planificador_installed_fields() as $field){
-    field_create_field($field);
+    //comprobación de la existencia del campo. 
+    if (!field_read_field($field['field_name'])) {
+      field_create_field($field);
+    }
   }
+
 //creando las instancias de los campos
   foreach(ente_planificador_installed_instances() as $instance){
-    field_create_instance($instance);
+    //comprobación la existencia de la instancia.
+    if (!field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+      field_create_instance($instance);
+    } 
   }
-
-  $module = 'Ente Planificador';
-  $message = 'El módulo '. $module .' fue instalado correctamente';
-  drupal_set_message(t($message), $type = 'status');
 }
 
-/*
+/**
  * Implementation of hook_uninstall()
+ * @see Si se descomenta y se desinstala el modulo borrara toda la información de los campos
  */
-function ente_planificador_uninstall() {
+/*
+function ente_planificador_uninstall() {  
+
   //elimina las instancias de los campos
   foreach(ente_planificador_installed_instances() as $instance){
     field_delete_instance($instance, $field_cleanup = TRUE);
@@ -59,11 +65,8 @@ function ente_planificador_uninstall() {
   foreach(ente_planificador_installed_fields() as $field){
     field_delete_field($field);
   }
-
-  $module = 'Ente Planificador';
-  $message = 'El módulo '. $module .' fue desinstalado correctamente el modulo ente planificador';
-  drupal_set_message(t($message), $type = 'status');
 }
+*/
 
 /*
  * Implementation of function ente_planificador_installed_fields

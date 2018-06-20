@@ -20,19 +20,19 @@
   * along with this program; if not, write to the Free Software
   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   *
-  * @author Cenditel Merida TSU- Miguel Angel Narvaez Montilva
+  * @author Cenditel Mérida TSU- Miguel Angel Narvaez Montilva
   * @see http://www.cenditel.gob.ve/
   * @see http://planificacion.cenditel.gob.ve/
   */
 
-
 /*
  * Implementation of hook permission()
  */
+
 // permisos administrativos para acceder al modulo 
 function ente_planificador_permission() {
   return array(
-    'access to system entes planificador' => array(
+    'ente planificador' => array(
       'title' => t('Acceso al modulo Ente Planificador'),
       'description' => t('Posibilidad de acceder a trabajar con el modulo ente planificador y las funcionalidades incorparadas en el mismo.'),
     ),
@@ -42,6 +42,7 @@ function ente_planificador_permission() {
 /*
  * Implementation of hook_help
  */
+
 // ayuda del modulo 
 function ente_planificador_help($path, $arg) {
   switch ($path) {
@@ -59,9 +60,11 @@ function ente_planificador_help($path, $arg) {
 }
 
 //se crea el tipo de contenido ente planificador con el hook_node_info & hook_form
+
 /*
  * Implementation of hook_node_info()
  */
+
 function ente_planificador_node_info() {
   return array(
     'ente_planificador' => array(
@@ -76,13 +79,14 @@ function ente_planificador_node_info() {
 /*
  * implementation of hook]_menu()
  */
+
 function ente_planificador_menu(){
   $items['ente_planificador'] = array(    // <-- enlace url al modulo 
     'title' => t('Ente Planificador'), // <-- titulo de hipervinculo en panel 
     'page callback' => 'drupal_get_form', 
-    'page arguments' => array('Sistema Ente planificador'),
+    'page arguments' => array('ente_planificador_form'),
     //'access callback'=> TRUE,
-    'access arguments' => array('access to system entes planificador'), //acceso restringido por hook  permission
+    'access arguments' => array('ente planificador'), //acceso restringido por hook  permission
     'description' => t('Systema Ente Planificador'),
     'type' => MENU_NORMAL_ITEM,
   );
@@ -93,6 +97,25 @@ function ente_planificador_menu(){
 /*
  * Implementation of hook_form()
  */
+
 function ente_planificador_form(&$node, $form_state) {
   return node_content_form($node, $form_state);
 }
+
+
+
+/*
+ * Implementation of hook_form()
+ *
+//decalracion de formulario 
+function ente_planificador_form($form, $form_state){
+  $form['#attributes'] = array('enctype' => "multipart/form-data"); 
+
+  $form['description'] = array(//formulario con titutlo solamente
+    '#type' => 'item',
+    '#title' => t('Modulo ente planificador para drupal 7 '),
+  );
+   
+  return $form;
+}
+*/
