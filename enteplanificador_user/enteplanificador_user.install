@@ -37,7 +37,8 @@ function enteplanificador_user_install(){
   //creando las instancias de los campos
   foreach(enteplanificador_user_installed_instances() as $instance){
   //comprobación la existencia de la instancia.
-    if (!field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+    $instancestatus = field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle']);
+    if (empty($instancestatus)) {
       field_create_instance($instance);
     } 
   }
@@ -55,23 +56,23 @@ function enteplanificador_user_installed_fields(){
       'type' => 'entityreference',
       'cardinality' => 1,
     ),
-    'field_enteplanificador_user_nombre' => array(
-      'field_name' => 'field_enteplanificador_user_nombre',
+    'field_ente_user_nombre' => array(
+      'field_name' => 'field_ente_user_nombre',
       'type' => 'text',
       'cardinality' => 1,
     ),
-    'field_enteplanificador_user_apellido' => array(
-      'field_name' => 'field_enteplanificador_user_apellido',
+    'field_ente_user_apellido' => array(
+      'field_name' => 'field_ente_user_apellido',
       'type' => 'text',
       'cardinality' => 1,
     ),
-    'field_enteplanificador_user_cedula' => array(
-      'field_name' => 'field_enteplanificador_user_cedula',
+    'field_ente_user_cedula' => array(
+      'field_name' => 'field_ente_user_cedula',
       'type' => 'text',
       'cardinality' => 1,
     ),
-    'field_enteplanificador_user_telefono' => array(
-      'field_name' => 'field_enteplanificador_user_telefono',
+    'field_ente_user_telefono' => array(
+      'field_name' => 'field_ente_user_telefono',
       'type' => 'text',
       'cardinality' => 1,
     ), 
@@ -99,8 +100,8 @@ function enteplanificador_user_installed_instances(){
       ),
     ),
 
-    'field_enteplanificador_user_nombre' => array(
-      'field_name' => 'field_enteplanificador_user_nombre',
+    'field_ente_user_nombre' => array(
+      'field_name' => 'field_ente_user_nombre',
       'label' => $t('Nombre de usuario'),
       'entity_type' => 'user',
       'bundle' => 'user',
@@ -112,8 +113,8 @@ function enteplanificador_user_installed_instances(){
       ),
     ),
 
-    'field_enteplanificador_user_apellido' => array(
-      'field_name' => 'field_enteplanificador_user_apellido',
+    'field_ente_user_apellido' => array(
+      'field_name' => 'field_ente_user_apellido',
       'label' => $t('Apellido de usuario'),
       'entity_type' => 'user',
       'bundle' => 'user',
@@ -125,8 +126,8 @@ function enteplanificador_user_installed_instances(){
       ),
     ),
 
-    'field_enteplanificador_user_cedula' => array(
-      'field_name' => 'field_enteplanificador_user_cedula',
+    'field_ente_user_cedula' => array(
+      'field_name' => 'field_ente_user_cedula',
       'label' => $t('Cedula de identidad de usuario'),
       'entity_type' => 'user',
       'bundle' => 'user',
@@ -138,8 +139,8 @@ function enteplanificador_user_installed_instances(){
       ),
     ),
 
-    'field_enteplanificador_user_telefono' => array(
-      'field_name' => 'field_enteplanificador_user_telefono',
+    'field_ente_user_telefono' => array(
+      'field_name' => 'field_ente_user_telefono',
       'label' => $t('Teléfono de usuario'),
       'entity_type' => 'user',
       'bundle' => 'user',

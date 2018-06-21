@@ -24,13 +24,12 @@
 ; @version 0.1 // (0.1)
 
 
-name = enteplanificador_user
-description = User field of ente planificador of SIPES-APN
+name = Ente Planificador User
+description = User field of ente planificador of SIPES-APN designed in CENDITEL Venezuela
 package = Planificador - core
 core = 7.x
 version = "7.x-dev"
 project = "Planificación del SIPES"
 datestamp = "1511372368"
 project = "Planificación"
-dependencies[] = ente_planificador
 dependencies[] = entityreference
