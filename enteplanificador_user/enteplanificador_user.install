@@ -37,8 +37,7 @@ function enteplanificador_user_install(){
   //creando las instancias de los campos
   foreach(enteplanificador_user_installed_instances() as $instance){
   //comprobación la existencia de la instancia.
-    $instancestatus = field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle']);
-    if (empty($instancestatus)) {
+    if (!field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
       field_create_instance($instance);
     } 
   }
@@ -90,8 +89,8 @@ function enteplanificador_user_installed_instances(){
     'field_enteplanificador_user' => array(
       'field_name' => 'field_enteplanificador_user',
       'label' => $t('Ente Planificador'),
-      'entity_type' => 'user',
-      'bundle' => 'user',
+      'entity_type' => 'node',
+      'bundle' => 'user',//ente_planificador
       'description' => t('Ente planificador'),
       'required' => TRUE,
       'widget' => array(
