@@ -43,6 +43,27 @@ function enteplanificador_user_install(){
   }
 }
 
+/**
+ * Implementation of hook_uninstall()
+ * @see Si se descomenta y se desinstala el modulo borrara toda la información de los campos y lo que esta en base de datos 
+ */
+
+function enteplanificador_user_uninstall() {  
+
+  //elimina las instancias de los campos
+  foreach(enteplanificador_user_installed_instances() as $instance){
+    field_delete_instance($instance, $field_cleanup = TRUE);
+  }
+  //elimina los campos del sistema
+  foreach(enteplanificador_user_installed_fields() as $field){
+    field_delete_field($field);
+  }
+}
+
+
+
+
+
 /*
  * Implementation of function enteplanificador_user_installed_instances
  */
@@ -89,14 +110,24 @@ function enteplanificador_user_installed_instances(){
     'field_enteplanificador_user' => array(
       'field_name' => 'field_enteplanificador_user',
       'label' => $t('Ente Planificador'),
-      'entity_type' => 'node',
-      'bundle' => 'user',//ente_planificador
+      'entity_type' => 'user',
+      'bundle' => 'user',//ente_planificador  
       'description' => t('Ente planificador'),
       'required' => TRUE,
       'widget' => array(
         'type' => 'options_select',
         'weight' => 10,
       ),
+      'settings' => array(
+        'target_type' => 'node',
+        'handler_settings' => array('ente_planificador' => array('user'))
+      ),
+      /*
+      'settings' => array(
+        'target_type' => 'your_entity_type',
+        'handler_settings' => array('target_bundles' => array('your_entity_bundle')),
+      ),
+      */
     ),
 
     'field_ente_user_nombre' => array(
