@@ -32,7 +32,6 @@
  */
 
 function ente_planificador_install() {
-
 //creando los campos
   foreach(ente_planificador_installed_fields() as $field){
     //comprobación de la existencia del campo. 
@@ -48,11 +47,30 @@ function ente_planificador_install() {
       field_create_instance($instance);
     } 
   }
+
+  //Creación de el vocabulario en el sistema
+
+  //Devuelve el objeto de vocabulario que coincide con una ID de vocabulario.
+  $vocabulary = taxonomy_vocabulary_load(variable_get('ubicacion_vocabulary', 0));
+  //de no existir el vocabulario se crea el vocabulario en taxonomia
+  if (!$vocabulary) {
+    $edit = array(
+      'name' => t('ubicación'),
+      'machine_name' => 'ubicacion',
+      'description' => t('ubicacion vocabulary'),
+      'hierarchy' => 1,
+      'module' => 'ente_planificador',
+      'weight' => -10,
+      );
+    $vocabulary = (object) $edit;
+  taxonomy_vocabulary_save($vocabulary); //crea el vocabulario en taxonomia
+  variable_set('ubicacion_vocabulary', $vocabulary->vid); //establece la variable ubicacion_vocabulary con el vid del voabulario
+  }
 }
 
 /**
  * Implementation of hook_uninstall()
- * @see Si se descomenta y se desinstala el modulo borrara toda la información de los campos
+ * @see Si se descomenta y se desinstala el modulo borrara toda la información de los campos y lo que contiene en la base de datos.
  */
 /*
 function ente_planificador_uninstall() {  
@@ -158,3 +176,6 @@ function ente_planificador_installed_instances(){
     ),
   );
 }
+
+
+

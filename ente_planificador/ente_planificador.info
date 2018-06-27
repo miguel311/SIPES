@@ -24,8 +24,8 @@
 ; @version 0.1 // (0.1)
 
 
-name = ente_planificador
-description = Ente planificador del SIPES-APN
+name = Ente Planificador
+description = Ente planificador of SIPES-APN designed in CENDITEL Venezuela
 package = Planificador - core
 core = 7.x
 version = "7.x-dev"

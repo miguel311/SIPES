@@ -48,7 +48,10 @@ function ente_planificador_help($path, $arg) {
   switch ($path) {
   // Ayuda general para el módulo Importar Terminos
     case 'admin/help#ente_planificador':
-      $output  = '';
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' .'The Ente PLanificador module allows registered users to register their entities'. '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<dl>';
       $output .= '<h3>' . t('Ayuda del modulo Ente planificador ') . '</h3>'.'<br>';
       $output .= '<h4>' . t('Objetivo del modulo:') . '</h4>';
       $output .= '<p>' . t('Proximamente más contenido.') . '</p>';
