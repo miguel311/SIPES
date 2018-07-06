@@ -1,0 +1,338 @@
+<?php
+  /**
+  * Modulo para la gestión de los entes planificadores
+  * Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+  * @file ente_planificador.module
+  * Drupal part Module to code ente planificador module
+  * Copyright 2011 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  * 
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  * 
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * @author Cenditel Merida TSU- Miguel Angel Narvaez Montilva
+  * @see http://www.cenditel.gob.ve/
+  * @see http://planificacion.cenditel.gob.ve/
+  */
+
+
+/*
+ * Implementation of hook_install
+ */
+function ente_planificador_install() {
+  ente_planificadorfiel();
+}
+
+/*
+ * Implementation of hook_enable()
+ */
+function ente_planificador_enable() {
+  // Notify content module when this module is uninstalled.
+  //drupal_load('module', 'ente_planificador');
+  content_notify('enable', 'ente_planificador'); // notifica al sistema la habilitacion del modulo ente_planificador.
+
+
+
+  // If we enable forum at the same time as taxonomy we need to call
+  // field_associate_fields() as otherwise the field won't be enabled until
+  // hook modules_enabled is called which takes place after hook_enable events.
+  field_associate_fields('taxonomy'); // actualiza la base de datos de taxonomia.
+  $vocabulary = taxonomy_vocabulary_load(variable_get('ente_planificador_vocabulary', 0)); //carga informacion del vocabulario en caso de existir  
+  if (!$vocabulary) {
+
+    $edit = array(
+      'name' => t('Ente Planificador'),
+      'machine_name' => 'ente_planificador_vocabulary',
+      'hierarchy' => 1,
+      'module' => 'ente_planificador',
+      'weight' => -10,
+    );
+
+    $vocabulary = (object) $edit;  //variable tipo objeto con valosres del array arriba mencionado.
+    taxonomy_vocabulary_save($vocabulary); // guarda el vocabulario en taxonomia.
+    variable_set('ente_planificador_vocabulary', $vocabulary->vid); 
+    //declaracion de variable persistente en el sistema de nombre ente_planificador_vocabulary con el valor de $vocabulary->vid que es el id del vocabulario.
+  }
+
+
+
+  //creacion de campo razon social en caso de no existir.
+  // Create the 'razon_social' field if it doesn't already exist.
+  if (!field_info_field('field_razon_social')) {
+    $field = array(
+      'field_name' => 'field_razon_social',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_razon_social',
+      'entity_type' => 'profile2',
+      'label' => 'Razon Social',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
+  //creacion de campo RIF en caso de no existir.
+  // Create the 'RIF' field if it doesn't already exist.
+  if (!field_info_field('field_RIF')) {
+    $field = array(
+      'field_name' => 'field_RIF',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_RIF',
+      'entity_type' => 'profile2',
+      'label' => 'RIF',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
+  //creacion de campo dirección en caso de no existir.
+  // Create the 'Direccion' field if it doesn't already exist.
+  if (!field_info_field('field_Direccion')) {
+    $field = array(
+      'field_name' => 'field_Direccion',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_Direccion',
+      'entity_type' => 'profile2',
+      'label' => 'Dirección',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
+  //creacion de campo tipo en caso de no existir.
+  // Create the 'tipo' field if it doesn't already exist.
+  if (!field_info_field('field_tipo')) {
+    $field = array(
+      'field_name' => 'field_tipo',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_tipo',
+      'entity_type' => 'profile2',
+      'label' => 'Tipo',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
+  //creacion de campo estado en caso de no existir.
+  // Create the 'estado' field if it doesn't already exist.
+  if (!field_info_field('field_estado')) {
+    $field = array(
+      'field_name' => 'field_estado',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_estado',
+      'entity_type' => 'profile2',
+      'label' => 'Estado',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
+  //creacion de campo municipio en caso de no existir.
+  // Create the 'municipio' field if it doesn't already exist.
+  if (!field_info_field('field_municipio')) {
+    $field = array(
+      'field_name' => 'field_municipio',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_municipio',
+      'entity_type' => 'profile2',
+      'label' => 'Municipio',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
+  //creacion de campo parroquia en caso de no existir.
+  // Create the 'parroquia' field if it doesn't already exist.
+  if (!field_info_field('field_parroquia')) {
+    $field = array(
+      'field_name' => 'field_parroquia',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_parroquia',
+      'entity_type' => 'profile2',
+      'label' => 'Parroquia',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
+  //creacion de campo ciudad en caso de no existir.
+  // Create the 'ciudad' field if it doesn't already exist.
+  if (!field_info_field('field_ciudad')) {
+    $field = array(
+      'field_name' => 'field_ciudad',
+      'type' => 'text',
+    );
+    field_create_field($field);
+    // Create the instance on the bundle.
+    $instance = array(
+      'field_name' => 'field_ciudad',
+      'entity_type' => 'profile2',
+      'label' => 'Ciudad',
+      'bundle' => 'user_information',
+      'required' => TRUE,
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    );
+    field_create_instance($instance);
+  }
+}
+
+/*
+ * Implementation of hook_disable()
+ */
+function ente_planificador_disable() {
+ //drupal_load('module', 'ente_planificadorn');
+  content_notify('disable', 'ente_planificador');
+}
+
+
+
+/*
+ * Implementation of funtion ente_planificadorfiel
+ *
+function ente_planificador_load_fiel{
+  $instance = array();
+  $instance['fields'] = array();
+
+    $instance['fields'][] = array (
+    'title' => 'razon_social',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'Razón social.',
+    'required' => TRUE,
+    'size' => 90,
+    );
+
+    $instance['fields'][] = array (
+    'title' => 'RIF',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'RIF de la razón social.',
+    'required' => TRUE,
+    'size' => 25,
+    );
+
+    $instance['fields'][] = array (
+    'title' => 'Dirección',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'Dirección de la razón social.',
+    'required' => TRUE,
+    'size' => 255,
+    );
+
+    $instance['fields'][] = array (
+    'title' => 'Tipo',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'Tipo de la razón social.',
+    'required' => TRUE,
+    'size' => 100,
+    );
+
+    $instance['fields'][] = array (
+    'title' => 'estado',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'Tipo de la razón social.',
+    'required' => TRUE,
+    'size' => 30,
+    );
+
+    $instance['fields'][] = array (
+    'title' => 'municipio',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'Tipo de la razón social.',
+    'required' => TRUE,
+    'size' => 30,
+    );
+
+    $instance['fields'][] = array (
+    'title' => 'parroquia',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'Tipo de la razón social.',
+    'required' => TRUE,
+    'size' => 30,
+    );
+
+    $instance['fields'][] = array (
+    'title' => 'ciudad',
+    'type' => 'varchar',
+    'default_value' => '',
+    'description' => 'Tipo de la razón social.',
+    'required' => TRUE,
+    'size' => 30,
+    );
+
+
+  return $instance;
+}
+*/

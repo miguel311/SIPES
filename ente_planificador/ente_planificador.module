@@ -28,13 +28,12 @@
 /*
  * Implementation of hook permission()
  */
-
 // permisos administrativos para acceder al modulo 
 function ente_planificador_permission() {
   return array(
     'ente planificador' => array(
-      'title' => t('Acceso al modulo Ente Planificador'),
-      'description' => t('Posibilidad de acceder a trabajar con el modulo ente planificador y las funcionalidades incorparadas en el mismo.'),
+      'title' => t('Access to the  module Ente Planificador'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
     ),
   );
 }
@@ -42,7 +41,6 @@ function ente_planificador_permission() {
 /*
  * Implementation of hook_help
  */
-
 // ayuda del modulo 
 function ente_planificador_help($path, $arg) {
   switch ($path) {
@@ -52,37 +50,31 @@ function ente_planificador_help($path, $arg) {
       $output .= '<p>' .'The Ente PLanificador module allows registered users to register their entities'. '</p>';
       $output .= '<h3>' . t('Uses') . '</h3>';
       $output .= '<dl>';
-      $output .= '<h3>' . t('Ayuda del modulo Ente planificador ') . '</h3>'.'<br>';
-      $output .= '<h4>' . t('Objetivo del modulo:') . '</h4>';
-      $output .= '<p>' . t('Proximamente más contenido.') . '</p>';
-
-      $output .= '<h4>' . t('Soporte técnico') . '</h4>';
-      $output .='<p>' . t('Comunícate con nosotros por la web para soporte técnico o cualquier inquietud <a href="@cenditel">cenditel</a>.', array('@cenditel' => url('http://planificacion.cenditel.gob.ve/contactos/'))) . '</p>';
+      $output .= '<h3>' . t('help of the module Ente planificador ') . '</h3>'.'<br>';
+      $output .= '<h4>' . t('Objetive of module:') . '</h4>';
+      $output .= '<h4>' . t('Technical support') . '</h4>';
+      $output .='<p>' . t('Contact us on the web for technical support or any questions <a href="@cenditel">cenditel</a>.', array('@cenditel' => url('http://planificacion.cenditel.gob.ve/contactos/'))) . '</p>';
     return $output;
   }  
 }
 
 //se crea el tipo de contenido ente planificador con el hook_node_info & hook_form
-
 /*
  * Implementation of hook_node_info()
  */
-
 function ente_planificador_node_info() {
   return array(
     'ente_planificador' => array(
       'name' => t('Ente Planificador'),
       'base' => 'ente_planificador',
-      'description' => t('Ente planificador para Drupal 7.'),
+      'description' => t('Ente planificador for Drupal 7.'),
     ),
   );
 }
 
-
 /*
  * implementation of hook]_menu()
  */
-
 function ente_planificador_menu(){
   $items['ente_planificador'] = array(    // <-- enlace url al modulo 
     'title' => t('Ente Planificador'), // <-- titulo de hipervinculo en panel 
@@ -100,11 +92,9 @@ function ente_planificador_menu(){
 /*
  * Implementation of hook_form()
  */
-
 function ente_planificador_form(&$node, $form_state) {
   return node_content_form($node, $form_state);
 }
-
 
 
 /*

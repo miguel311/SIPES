@@ -47,7 +47,6 @@ function enteplanificador_user_install(){
  * Implementation of hook_uninstall()
  * @see Si se descomenta y se desinstala el modulo borrara toda la información de los campos y lo que esta en base de datos 
  */
-
 function enteplanificador_user_uninstall() {  
 
   //elimina las instancias de los campos
@@ -65,9 +64,8 @@ function enteplanificador_user_uninstall() {
 
 
 /*
- * Implementation of function enteplanificador_user_installed_instances
+ * Implementation of function enteplanificador_user_installed_fields
  */
-
 function enteplanificador_user_installed_fields(){
   $t = get_t();
   return array(
@@ -75,6 +73,21 @@ function enteplanificador_user_installed_fields(){
       'field_name' => 'field_enteplanificador_user',
       'type' => 'entityreference',
       'cardinality' => 1,
+        'settings' => array(
+        'handler' => 'base',
+          'handler_settings' => array(
+            'behaviors' => array(
+              'views-select-list' => array(
+                'status' => 0,
+              ),
+            ),
+            'sort' => array(
+              'type' => 'none',
+            ),
+            'target_bundles' => array('ente_planificador'),
+          ),
+        'target_type' => 'node',
+      ),
     ),
     'field_ente_user_nombre' => array(
       'field_name' => 'field_ente_user_nombre',
@@ -102,7 +115,6 @@ function enteplanificador_user_installed_fields(){
 /*
  * Implementation of function enteplanificador_user_installed_instances
  */
-
 function enteplanificador_user_installed_instances(){
   $t = get_t();
   return array(
@@ -116,18 +128,12 @@ function enteplanificador_user_installed_instances(){
       'required' => TRUE,
       'widget' => array(
         'type' => 'options_select',
-        'weight' => 10,
+        'weight' => 9,
       ),
       'settings' => array(
         'target_type' => 'node',
-        'handler_settings' => array('ente_planificador' => array('user'))
+        'handler_settings' => array('target_bundles' => array('ente_planificador'))
       ),
-      /*
-      'settings' => array(
-        'target_type' => 'your_entity_type',
-        'handler_settings' => array('target_bundles' => array('your_entity_bundle')),
-      ),
-      */
     ),
 
     'field_ente_user_nombre' => array(
