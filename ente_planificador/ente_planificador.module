@@ -76,36 +76,12 @@ function ente_planificador_node_info() {
  * implementation of hook_menu()
  */
 function ente_planificador_menu(){
-  $items = array();
-  $items['administrar/entes_planificadores'] = array(
-    'title' => 'Consultar lista de actores planificadores',
-    'page callback' => 'entes_planificadores',
-    'access arguments' => array('ver planificador'),
-    'type' => MENU_NORMAL_ITEM,
-  );
-
-  return $items;
-}
-
-
-
-/*
-function entes_planificadores() {
- drupal_goto('administrar/entes_planificadores');
-}
-*/
-
-/*
- * implementation of hook_menu()
- */
-/*
-function ente_planificador_menu(){
   $items['ente_planificador'] = array(    // <-- enlace url al modulo 
-    'title' => t('Ente Planificador'), // <-- titulo de hipervinculo en panel 
+    'title' => t('administrar entes planificadores'), // <-- titulo de hipervinculo en panel 
     'page callback' => 'drupal_get_form', 
     'page arguments' => array('ente_planificador_form'),
-    //'access callback'=> TRUE,
-    'access arguments' => array('ente planificador'), //acceso restringido por hook  permission
+    'access callback'=> TRUE,
+    //'access arguments' => array('ente planificador'), //acceso restringido por hook  permission
     'description' => t('Systema Ente Planificador'),
     'type' => MENU_NORMAL_ITEM,
   );
@@ -115,15 +91,12 @@ function ente_planificador_menu(){
 /*
  * Implementation of hook_form()
  */
-/*
-function ente_planificador_form(&$node, $form_state) {
+function ente_planificador_form($node, &$form_state) {
 
+   $form = drupal_goto('administrar/entes_planificadores');
 
   return $form;
 }
-
-
-*/
 
 /**
  * Implementation of hook_views_api().
