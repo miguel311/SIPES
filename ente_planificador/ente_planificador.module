@@ -86,7 +86,6 @@ function ente_planificador_menu(){
   $items['administrar/entes_planificadores'] = array(    // <-- enlace url al modulo 
     'title' => 'Consultar lista de actores planificadores', // <-- titulo de hipervinculo en panel 
     'page callback' => 'entes_planificadores_views_list', 
-//    'page arguments' => array(1,'foo',),
     'access arguments' => array('admin planificador'), //acceso restringido por hook  permission
     'type' => MENU_NORMAL_ITEM,
   );
@@ -94,10 +93,17 @@ function ente_planificador_menu(){
   $items['entes_planificadores/registrar'] = array(
     'title' => 'Registrar Actores Planificadores',
     'page callback' => 'entes_planificadores_agregar',
-//    'page arguments' => array(1,'foo',),
     'access arguments' => array('admin planificador'),
     'type' => MENU_NORMAL_ITEM,
   );
+/*
+  $items['entes_planificadores/adminvista'] = array(
+    'title' => 'Administración de vistas de los entes planificadores',
+    'page callback' => 'entes_planificadores_adminvista',
+    'access arguments' => array('admin planificador'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+*/
   return $items;
 }
 
@@ -106,14 +112,14 @@ function ente_planificador_menu(){
  * Lista de actores planificadores
  */
 function entes_planificadores_views_list(){
-  $view_name = variable_get("list_ente_planificador", "");
-  $view_page = variable_get("list_ente_planificador_page", "default");
+  //$view_name = variable_get("list_ente_planificador", "");
+  //$view_page = variable_get("list_ente_planificador_page", "default");
 
-  //$view = views_get_view("administrar_entes_planificadores");
-  $view = views_get_view($view_name);
+  //$view = views_get_view($view_name);
+  $view = views_get_view('list_actores_planificador');
 
-  //$view->set_display('page');
-  $view->set_display($view_page);
+  //$view->set_display($view_page);
+  $view->set_display('default');
 
   $view->pre_execute();
   $view->execute();
@@ -130,6 +136,15 @@ function entes_planificadores_views_list(){
 function entes_planificadores_agregar() {
   drupal_goto('node/add/ente-planificador');
 }
+
+
+/*
+function entes_planificadores_adminvista() {
+
+
+}
+*/
+
 
 /**
  * Implementation of hook_views_api().

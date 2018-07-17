@@ -31,11 +31,11 @@
 function ente_planificador_views_default_views() {
 
   $view = new view();
-  $view->name = 'administracion_de_entes_planificadores';
+  $view->name = 'list_actores_planificador';
   $view->description = '';
   $view->tag = 'default';
   $view->base_table = 'node';
-  $view->human_name = 'administracion_de_entes_planificadores';
+  $view->human_name = 'list_actores_planificador';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
