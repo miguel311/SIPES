@@ -96,14 +96,15 @@ function ente_planificador_menu(){
     'access arguments' => array('admin planificador'),
     'type' => MENU_NORMAL_ITEM,
   );
-/*
+
   $items['entes_planificadores/adminvista'] = array(
     'title' => 'Administración de vistas de los entes planificadores',
-    'page callback' => 'entes_planificadores_adminvista',
-    'access arguments' => array('admin planificador'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_adminvista_form'),
+    'access callback'=> TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
-*/
+
   return $items;
 }
 
@@ -137,14 +138,92 @@ function entes_planificadores_agregar() {
   drupal_goto('node/add/ente-planificador');
 }
 
+function ente_adminvista_form($form, &$form_state){
+  $form['#attributes'] = array('enctype' => "multipart/form-data"); //duda investigar.
+
+  $form['description'] = array(
+    '#type' => 'item',
+    '#title' => t('Lista de vistas parar administrar en el sistema  '),
+  );
+
+  //$view_name = variable_get("list_ente_planificador", "");
+  //$view_page = variable_get("ente_planificador_page", "default");
+
+  $options = array('none' => 'Ninguna');
+  $views = views_get_all_views();
+  foreach ($views as $view) {
+    $options[$view->name] = $view->human_name;
+  }
+
+  //print("<pre>");
+  //print_r($select_views);
+  //print("</pre>");
+  //jklsdgjklsf();
+
+  // form of select the list of views 
+  $form['views'] = array(
+    '#type'             => 'select',
+    '#default_value'    => 0 ,
+    '#required'         =>TRUE,
+    '#title'            => t('Seleccione la views.'),
+    '#position'         => 'left',
+    '#options'          => $options,
+    '#description'      => t('Lista de views disponible'),
+    '#ajax' => array(
+      'callback' => 'ente_planificador_views_ajax1', 
+      'wrapper' => 'ajax_datos1', 
+      'effect' => 'fade',
+      'event' => 'change',
+      'method' => 'replace',
+    ),
+  );
+
+   $form['views_container'] = array(
+    '#type' => 'container', 
+    '#prefix' => '<div id="ajax_datos1">',
+    '#suffix' => '</div>',
+  );
+
+
+  if (isset($form_state['values']['views']) && ($form_state['values']['views'])!='none'){
+    
+    $form['views_container']['text'] = array(
+    '#type' => 'item',
+    '#title' => t('Seleccione el tipo de vista '),
+    );
+
+    $name = $form_state['values']['views'];
+    $view =  views_get_view($name, 0);
+    foreach ($view->display as $key => $display){
+      $options_display[$key] = $display->display_title;
+    }
+
+    //print("<pre>");
+    //print_r($view);
+    //print("</pre>");
+    //jklsdgjklsf();
+
+    $form['views_container']['views_display'] = array(
+    '#type'             => 'select',
+    '#default_value'    => 0 ,
+    '#required'         =>TRUE,
+    '#title'            => t('Seleccione la views.'),
+    '#position'         => 'left' ,
+    '#options'          => $options_display,
+    '#description'      => t('Lista de views disponible'),
+    );
+  }
+
+return $form;
+}
 
 /*
-function entes_planificadores_adminvista() {
+ * Implementation of function ente_planificador_ajax1   
+ */
+function ente_planificador_views_ajax1($form, &$form_state) {
 
-
+  return $form['views_container'];
 }
-*/
-
 
 /**
  * Implementation of hook_views_api().
