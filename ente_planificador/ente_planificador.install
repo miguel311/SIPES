@@ -69,11 +69,18 @@ function ente_planificador_install() {
 }
 /**
  * Implementation of hook_uninstall()
- * @see Si se descomenta y se desinstala el modulo borrara toda la información de los campos y lo que contiene en la base de datos.
+ * 
  */
-/*
-function ente_planificador_uninstall() {  
 
+function ente_planificador_uninstall() {  
+  //delete the persistent variable. 
+  variable_del('views');
+  variable_del('views_display');
+
+  /**
+  *@see Si se descomenta y se desinstala el modulo borrara toda la información de los campos y lo que contiene en la base de datos.
+  */
+  /*
   //elimina las instancias de los campos
   foreach(ente_planificador_installed_instances() as $instance){
     field_delete_instance($instance, $field_cleanup = TRUE);
@@ -82,8 +89,9 @@ function ente_planificador_uninstall() {
   foreach(ente_planificador_installed_fields() as $field){
     field_delete_field($field);
   }
+  */
 }
-*/
+
 
 /*
  * Implementation of function ente_planificador_installed_fields

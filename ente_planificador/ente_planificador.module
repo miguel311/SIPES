@@ -76,7 +76,6 @@ function ente_planificador_node_info() {
  * Implementation of hook_form()
  */
 function ente_planificador_form($node, &$form_state) {
-
 }
 
 /*
@@ -97,14 +96,21 @@ function ente_planificador_menu(){
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['entes_planificadores/adminvista'] = array(
-    'title' => 'Administración de vistas de los entes planificadores',
+  $items['admin/settings/ente_planificador'] = array(
+    'title' => t('Configuración Ente Planificador'),
+    'description' => t('Configuración del Ente Planificador.'),
+    'access callback'=> TRUE,
+  );
+
+  $items['admin/settings/ente_planificador/view'] = array(
+    'title' => t('Configuración de view'),
+    'description' => t('Configuración de view.'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('ente_adminvista_form'),
+    'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
-
+  
   return $items;
 }
 
@@ -113,19 +119,14 @@ function ente_planificador_menu(){
  * Lista de actores planificadores
  */
 function entes_planificadores_views_list(){
-  //$view_name = variable_get("list_ente_planificador", "");
-  //$view_page = variable_get("list_ente_planificador_page", "default");
-
-  //$view = views_get_view($view_name);
-  $view = views_get_view('list_actores_planificador');
-
-  //$view->set_display($view_page);
-  $view->set_display('default');
-
+//call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
+  $view_name = (variable_get('views', NULL)) ? variable_get('views', NULL) : 'list_actores_planificador';
+  $view_page = (variable_get('views_display', NULL)) ? variable_get('views_display', NULL) : 'default';
+  $view = views_get_view($view_name);
+  $view->set_display($view_page);
   $view->pre_execute();
   $view->execute();
   $output = $view->render();
-
   return $output;
 }
 
@@ -138,18 +139,18 @@ function entes_planificadores_agregar() {
   drupal_goto('node/add/ente-planificador');
 }
 
-function ente_adminvista_form($form, &$form_state){
+/*
+ * Implementation of hook_form()
+ */
+function ente_planificador_admin_settings_form($form, &$form_state){
   $form['#attributes'] = array('enctype' => "multipart/form-data"); //duda investigar.
 
   $form['description'] = array(
     '#type' => 'item',
-    '#title' => t('Lista de vistas parar administrar en el sistema  '),
+    '#title' => t('List of views to manage in the system'),
   );
 
-  //$view_name = variable_get("list_ente_planificador", "");
-  //$view_page = variable_get("ente_planificador_page", "default");
-
-  $options = array('none' => 'Ninguna');
+  $options = array();
   $views = views_get_all_views();
   foreach ($views as $view) {
     $options[$view->name] = $view->human_name;
@@ -163,14 +164,14 @@ function ente_adminvista_form($form, &$form_state){
   // form of select the list of views 
   $form['views'] = array(
     '#type'             => 'select',
-    '#default_value'    => 0 ,
+    '#default_value'    => variable_get('views', NULL),
     '#required'         =>TRUE,
-    '#title'            => t('Seleccione la views.'),
+    '#title'            => t('selected the views.'),
     '#position'         => 'left',
     '#options'          => $options,
-    '#description'      => t('Lista de views disponible'),
+    '#description'      => t('List of available views '),
     '#ajax' => array(
-      'callback' => 'ente_planificador_views_ajax1', 
+      'callback' => 'ente_planificador_views_ajax_display', 
       'wrapper' => 'ajax_datos1', 
       'effect' => 'fade',
       'event' => 'change',
@@ -178,21 +179,17 @@ function ente_adminvista_form($form, &$form_state){
     ),
   );
 
-   $form['views_container'] = array(
+  $form['views_container'] = array(
     '#type' => 'container', 
     '#prefix' => '<div id="ajax_datos1">',
     '#suffix' => '</div>',
   );
 
 
-  if (isset($form_state['values']['views']) && ($form_state['values']['views'])!='none'){
-    
-    $form['views_container']['text'] = array(
-    '#type' => 'item',
-    '#title' => t('Seleccione el tipo de vista '),
-    );
+  if (isset($form_state['values']['views']) || (variable_get('views', NULL))){
 
-    $name = $form_state['values']['views'];
+    $name = (isset($form_state['values']['views'])) ? $form_state['values']['views'] : variable_get('views', NULL);
+    //$name = $form_state['values']['views'];
     $view =  views_get_view($name, 0);
     foreach ($view->display as $key => $display){
       $options_display[$key] = $display->display_title;
@@ -204,24 +201,22 @@ function ente_adminvista_form($form, &$form_state){
     //jklsdgjklsf();
 
     $form['views_container']['views_display'] = array(
-    '#type'             => 'select',
-    '#default_value'    => 0 ,
-    '#required'         =>TRUE,
-    '#title'            => t('Seleccione la views.'),
-    '#position'         => 'left' ,
-    '#options'          => $options_display,
-    '#description'      => t('Lista de views disponible'),
+      '#type'             => 'select',
+      '#required'         =>TRUE,
+      '#title'            => t('selected the type of view.'),
+      '#default_value'    => variable_get('views_display', NULL),//call the value of form for system_settings_form 
+      '#options'          => $options_display,
+      '#description'      => t('List of available types of views'),
     );
   }
-
-return $form;
+  $form = system_settings_form($form);//autosave information of the form.
+  return $form;
 }
 
 /*
  * Implementation of function ente_planificador_ajax1   
- */
-function ente_planificador_views_ajax1($form, &$form_state) {
-
+ */ 
+function ente_planificador_views_ajax_display($form, &$form_state) {
   return $form['views_container'];
 }
 
@@ -234,3 +229,10 @@ function ente_planificador_views_api($module = NULL, $api = NULL) {
     'path' => drupal_get_path('module', 'ente_planificador') . '/views',
   );
 }
+
+
+/**
+*
+*
+*
+*/
