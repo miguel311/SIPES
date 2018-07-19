@@ -100,17 +100,36 @@ function ente_planificador_menu(){
     'title' => t('Configuración Ente Planificador'),
     'description' => t('Configuración del Ente Planificador.'),
     'access callback'=> TRUE,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   $items['admin/settings/ente_planificador/view'] = array(
-    'title' => t('Configuración de view'),
-    'description' => t('Configuración de view.'),
+    'title' => t('Ente Planificador'),
+    'description' => t('Configuración del Ente Planificador.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
-  
+
+  //Item required to include tab in configuration ente planificador
+  $items['admin/settings/ente_planificador/view/2'] = array(
+    //'title' =>  t('Configurar'),
+    'access callback'=> TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10
+  );
+
+  $items['admin/settings/ente_planificador/view/1'] = array(
+    'title' => t('Ente Planificador'),
+    'description' => t('Configuración del Ente Planificador.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_admin_settings_form'),
+    'access callback'=> TRUE,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -12
+  );
+
   return $items;
 }
 
@@ -156,18 +175,12 @@ function ente_planificador_admin_settings_form($form, &$form_state){
     $options[$view->name] = $view->human_name;
   }
 
-  //print("<pre>");
-  //print_r($select_views);
-  //print("</pre>");
-  //jklsdgjklsf();
-
   // form of select the list of views 
   $form['views'] = array(
     '#type'             => 'select',
     '#default_value'    => variable_get('views', NULL),
     '#required'         =>TRUE,
     '#title'            => t('selected the views.'),
-    '#position'         => 'left',
     '#options'          => $options,
     '#description'      => t('List of available views '),
     '#ajax' => array(
@@ -194,11 +207,6 @@ function ente_planificador_admin_settings_form($form, &$form_state){
     foreach ($view->display as $key => $display){
       $options_display[$key] = $display->display_title;
     }
-
-    //print("<pre>");
-    //print_r($view);
-    //print("</pre>");
-    //jklsdgjklsf();
 
     $form['views_container']['views_display'] = array(
       '#type'             => 'select',
@@ -229,10 +237,3 @@ function ente_planificador_views_api($module = NULL, $api = NULL) {
     'path' => drupal_get_path('module', 'ente_planificador') . '/views',
   );
 }
-
-
-/**
-*
-*
-*
-*/
