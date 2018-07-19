@@ -121,8 +121,8 @@ function ente_planificador_menu(){
   );
 
   $items['admin/settings/ente_planificador/view/1'] = array(
-    'title' => t('Ente Planificador'),
-    'description' => t('Configuración del Ente Planificador.'),
+    'title' => t('Configuración de views'),
+    'description' => t('Configuración de views del Ente Planificador.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
@@ -162,8 +162,6 @@ function entes_planificadores_agregar() {
  * Implementation of hook_form()
  */
 function ente_planificador_admin_settings_form($form, &$form_state){
-  $form['#attributes'] = array('enctype' => "multipart/form-data"); //duda investigar.
-
   $form['description'] = array(
     '#type' => 'item',
     '#title' => t('List of views to manage in the system'),
@@ -197,7 +195,6 @@ function ente_planificador_admin_settings_form($form, &$form_state){
     '#prefix' => '<div id="ajax_datos1">',
     '#suffix' => '</div>',
   );
-
 
   if (isset($form_state['values']['views']) || (variable_get('views', NULL))){
 
