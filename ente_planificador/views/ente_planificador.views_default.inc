@@ -29,7 +29,7 @@
  * Implements hook_views_default_views().
  */
 function ente_planificador_views_default_views() {
-
+  
   $view = new view();
   $view->name = 'list_actores_planificador';
   $view->description = '';
@@ -89,6 +89,13 @@ function ente_planificador_views_default_views() {
       'empty_column' => 0,
     ),
   );
+  /* Field: Content: Nid */
+  $handler->display->display_options['fields']['nid']['id'] = 'nid';
+  $handler->display->display_options['fields']['nid']['table'] = 'node';
+  $handler->display->display_options['fields']['nid']['field'] = 'nid';
+  $handler->display->display_options['fields']['nid']['label'] = '';
+  $handler->display->display_options['fields']['nid']['exclude'] = TRUE;
+  $handler->display->display_options['fields']['nid']['element_label_colon'] = FALSE;
   /* Field: Content: Title */
   $handler->display->display_options['fields']['title']['id'] = 'title';
   $handler->display->display_options['fields']['title']['table'] = 'node';
@@ -103,7 +110,7 @@ function ente_planificador_views_default_views() {
   $handler->display->display_options['fields']['nothing']['label'] = 'Usuarios';
   $handler->display->display_options['fields']['nothing']['alter']['text'] = 'Agregar usuarios al actor planificador';
   $handler->display->display_options['fields']['nothing']['alter']['make_link'] = TRUE;
-  $handler->display->display_options['fields']['nothing']['alter']['path'] = 'admin/people/create';
+  $handler->display->display_options['fields']['nothing']['alter']['path'] = 'admin/people/create/[nid]';
   $handler->display->display_options['fields']['nothing']['alter']['absolute'] = TRUE;
   /* Field: Content: Edit link */
   $handler->display->display_options['fields']['edit_node']['id'] = 'edit_node';

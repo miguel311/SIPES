@@ -30,5 +30,6 @@ package = Planificador - core
 core = 7.x
 version = "7.x-dev"
 project = "Planificación del SIPES"
+configure = admin/settings/ente_planificador/view
 datestamp = "1511372368"
 project = "Planificación"
