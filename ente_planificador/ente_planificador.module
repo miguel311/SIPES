@@ -82,11 +82,10 @@ function ente_planificador_form($node, &$form_state) {
  * Implementation of hook_node_presave()
  */
 function ente_planificador_node_presave($node) {
-  //if ($node->field_razon_social['type']['#value'] = 'ente_planificador') {
-        $node->title = $node->field_razon_social['und'][0]['value']; 
+  if ($node->type =='ente_planificador') {
+    $node->title = $node->field_razon_social['und'][0]['value']; 
     // the same information is saved from the field_razon_social in field  title
-  //}
-
+  }
 }
 
 /*
@@ -257,7 +256,10 @@ function ente_planificador_views_api($module = NULL, $api = NULL) {
  * Implementation of hook_form_alter().
  */
 function ente_planificador_form_alter(&$form, &$form_state, $form_id){
-  if ($form_id == 'user_register_form') {
-
+  if ($form_id == 'user_register_form'&& arg(3)) {
+    $ente_planificador = arg(3); 
+    //The number of the planner entity of argument 3 given by the url is stored in the variable
+    $form['field_enteplanificador_user']['#type'] = 'hidden'; //hide the form field_enteplanificador_user
+    $form['field_enteplanificador_user']['und']['#default_value'] = $ente_planificador; // it gives the value to the select
   }
 }
