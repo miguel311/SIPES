@@ -74,8 +74,8 @@ function ente_planificador_install() {
 
 function ente_planificador_uninstall() {  
   //delete the persistent variable. 
-  variable_del('views');
-  variable_del('views_display');
+  variable_del('entepla_views');
+  variable_del('entepla_views_display');
 
   /**
   *@see Si se descomenta y se desinstala el modulo borrara toda la información de los campos y lo que contiene en la base de datos.

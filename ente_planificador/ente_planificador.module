@@ -31,8 +31,24 @@
 // permisos administrativos para acceder al modulo 
 function ente_planificador_permission() {
   return array(
-    'admin planificador' => array(
+    'admin planner' => array(
       'title' => t('Access to the  module Ente Planificador'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'view planner' => array(
+      'title' => t('view planner'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'edit own planner' => array(
+      'title' => t('edit own planner'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'edit all planner' => array(
+      'title' => t('edit all planner'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'admin all planner' => array(
+      'title' => t('admin all planner'),
       'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
     ),
   );
@@ -150,9 +166,9 @@ function ente_planificador_menu(){
 function entes_planificadores_views_list() {
 //call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
 
-  if(variable_get('views', NULL) && variable_get('views_display', NULL)) {
-    $view_name = variable_get('views', NULL);
-    $view_page = variable_get('views_display', NULL);
+  if(variable_get('entepla_views', NULL) && variable_get('entepla_views_display', NULL)) {
+    $view_name = variable_get('entepla_views', NULL);
+    $view_page = variable_get('entepla_views_display', NULL);
 
     $view = views_get_view($view_name);
     $view->set_display($view_page);
@@ -186,14 +202,14 @@ function ente_planificador_admin_settings_form($form, &$form_state) {
   );
 
   $options = array();
-  $views = views_get_all_views();
-  foreach ($views as $view){
+  $entepla_views = views_get_all_views();
+  foreach ($entepla_views as $view){
     $options[$view->name] = $view->human_name;
   }
   // form of select the list of views 
-  $form['views'] = array(
+  $form['entepla_views'] = array(
     '#type'             => 'select',
-    '#default_value'    => variable_get('views', NULL),
+    '#default_value'    => variable_get('entepla_views', NULL),
     '#required'         =>TRUE,
     '#title'            => t('selected the views.'),
     '#options'          => $options,
@@ -213,20 +229,20 @@ function ente_planificador_admin_settings_form($form, &$form_state) {
     '#suffix' => '</div>',
   );
 
-  if (isset($form_state['values']['views']) || (variable_get('views', NULL))){
+  if (isset($form_state['values']['entepla_views']) || (variable_get('entepla_views', NULL))){
 
-    $name = (isset($form_state['values']['views'])) ? $form_state['values']['views'] : variable_get('views', NULL);
+    $name = (isset($form_state['values']['entepla_views'])) ? $form_state['values']['entepla_views'] : variable_get('entepla_views', NULL);
     //$name = $form_state['values']['views'];
     $view =  views_get_view($name, 0);
     foreach ($view->display as $key => $display){
       $options_display[$key] = $display->display_title;
     }
 
-    $form['views_container']['views_display'] = array(
+    $form['views_container']['entepla_views_display'] = array(
       '#type'             => 'select',
       '#required'         =>TRUE,
       '#title'            => t('selected the type of view.'),
-      '#default_value'    => variable_get('views_display', NULL),//call the value of form for system_settings_form 
+      '#default_value'    => variable_get('entepla_views_display', NULL),//call the value of form for system_settings_form 
       '#options'          => $options_display,
       '#description'      => t('List of available types of views'),
     );
