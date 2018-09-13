@@ -166,7 +166,7 @@ function ente_planificador_menu(){
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -12
   );
-
+/*
   $items['administrar_usuarios'] = array(
     'title' => 'Consultar Listado de Usuarios',
     'description' => t('Lista de usuarios con ente planificadores.'),
@@ -174,7 +174,7 @@ function ente_planificador_menu(){
     'access arguments' => array('admin planificador'),
     'type' => MENU_NORMAL_ITEM,
   );
-
+*/
   return $items;
 }
 
@@ -183,7 +183,6 @@ function ente_planificador_menu(){
  * Lista de actores planificadores
  */
 function entes_planificadores_views_list() {
-
 
 //call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
 
@@ -325,8 +324,6 @@ print "</pre>";
 */
 }
 
-
-
 /**
  * Implementation of ente_planificador_load suplandado por ente_planificador_leer_ente_planificadores().
  *
@@ -364,23 +361,24 @@ print '</pre>';
 
   return isset($ente_planificadores[$ente_planificador]) ? $ente_planificadores[$ente_planificador] : FALSE;
 
-
   //return $ente_planificadores;
-
 }
 
 // hacer un arreglo de los objetos ente planificador...
 // retornar el objeto del nodo true y false...
 
 
-
+/*
 function entes_planificadores_listar_usuarios(){
 
   $view = views_get_view('consultar_listado_de_usuarios');
-  $view->set_display('default');
+  $view->set_display('page');
   $view->pre_execute();
   $view->execute();
   $output = $view->render();
 
   return $output; 
 }
+
+
+*/

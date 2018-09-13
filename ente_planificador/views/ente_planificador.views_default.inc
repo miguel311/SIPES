@@ -29,7 +29,7 @@
  * Implements hook_views_default_views().
  */
 function ente_planificador_views_default_views() {
-  
+  $views = array();
   $view = new view();
   $view->name = 'list_actores_planificador';
   $view->description = '';
@@ -157,24 +157,20 @@ function ente_planificador_views_default_views() {
   return $views;
 }
 
+  ////////// estudiar para que salgan las dos vistas 
+  //https://www.drupal.org/forum/support/module-development-and-code-questions/2012-04-20/how-to-import-two-or-more-views-in-a
+  //https://www.drupal.org/node/1535948
 
-////////// estudiar para que salgan las dos vistas 
-//https://www.drupal.org/forum/support/module-development-and-code-questions/2012-04-20/how-to-import-two-or-more-views-in-a
-//https://www.drupal.org/node/1535948
-
-/*
-
-function ente_planificador_views_default_views() {
-  $files = file_scan_directory(drupal_get_path('module', 'mymodule') . '/views', '/\.view/');
-  foreach ($files as $absolute => $file) {
-    require $absolute;
-    if (isset($view)) {
-      $views[$file->name] = $view;
+  /*
+  function ente_planificador_views_default_views() {
+    $files = file_scan_directory(drupal_get_path('module', 'mymodule') . '/views', '/\.view/');
+    foreach ($files as $absolute => $file) {
+      require $absolute;
+      if (isset($view)) {
+        $views[$file->name] = $view;
+      }
     }
+    $views[$view->name] = $view;
+    return $views;
   }
-  $views[$view->name] = $view;
-  return $views;
-}
-
-
-*/
+  */

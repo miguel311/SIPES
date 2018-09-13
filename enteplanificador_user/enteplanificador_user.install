@@ -56,7 +56,7 @@ function enteplanificador_user_uninstall() {
   }
   //elimina los campos del sistema
   foreach(enteplanificador_user_installed_fields() as $field){
-    field_delete_field($field);
+    field_delete_field($field['field_name']);
   }
 }
 
