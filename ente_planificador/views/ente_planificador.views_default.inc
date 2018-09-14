@@ -103,12 +103,13 @@ function ente_planificador_views_default_views() {
   $handler->display->display_options['fields']['title']['label'] = 'Ente Planificador ';
   $handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
   $handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
+  $handler->display->display_options['fields']['title']['empty'] = '--N/A--';
   /* Field: Global: Custom text */
   $handler->display->display_options['fields']['nothing']['id'] = 'nothing';
   $handler->display->display_options['fields']['nothing']['table'] = 'views';
   $handler->display->display_options['fields']['nothing']['field'] = 'nothing';
   $handler->display->display_options['fields']['nothing']['label'] = 'Usuarios';
-  $handler->display->display_options['fields']['nothing']['alter']['text'] = 'Agregar usuarios al actor planificador';
+  $handler->display->display_options['fields']['nothing']['alter']['text'] = 'Agregar usuarios ';
   $handler->display->display_options['fields']['nothing']['alter']['make_link'] = TRUE;
   $handler->display->display_options['fields']['nothing']['alter']['path'] = 'admin/people/create/[nid]';
   $handler->display->display_options['fields']['nothing']['alter']['absolute'] = TRUE;
@@ -119,14 +120,6 @@ function ente_planificador_views_default_views() {
   $handler->display->display_options['fields']['edit_node']['label'] = 'Modificar';
   $handler->display->display_options['fields']['edit_node']['alter']['alter_text'] = TRUE;
   $handler->display->display_options['fields']['edit_node']['alter']['text'] = 'Modificar';
-  /* Field: Content revision: Title */
-  $handler->display->display_options['fields']['title_1']['id'] = 'title_1';
-  $handler->display->display_options['fields']['title_1']['table'] = 'node_revision';
-  $handler->display->display_options['fields']['title_1']['field'] = 'title';
-  $handler->display->display_options['fields']['title_1']['label'] = 'Datos Basicos ';
-  $handler->display->display_options['fields']['title_1']['alter']['alter_text'] = TRUE;
-  $handler->display->display_options['fields']['title_1']['alter']['text'] = 'Editar datos del actor planificador';
-  $handler->display->display_options['fields']['title_1']['link_to_node'] = TRUE;
   /* Field: Content: Delete link */
   $handler->display->display_options['fields']['delete_node']['id'] = 'delete_node';
   $handler->display->display_options['fields']['delete_node']['table'] = 'views_entity_node';
@@ -156,21 +149,3 @@ function ente_planificador_views_default_views() {
   $views[$view->name] = $view;
   return $views;
 }
-
-  ////////// estudiar para que salgan las dos vistas 
-  //https://www.drupal.org/forum/support/module-development-and-code-questions/2012-04-20/how-to-import-two-or-more-views-in-a
-  //https://www.drupal.org/node/1535948
-
-  /*
-  function ente_planificador_views_default_views() {
-    $files = file_scan_directory(drupal_get_path('module', 'mymodule') . '/views', '/\.view/');
-    foreach ($files as $absolute => $file) {
-      require $absolute;
-      if (isset($view)) {
-        $views[$file->name] = $view;
-      }
-    }
-    $views[$view->name] = $view;
-    return $views;
-  }
-  */

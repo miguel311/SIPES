@@ -1,0 +1,36 @@
+; Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+; @file ente_planificador.info
+; Drupal part Module to install ente planificador module
+; Copyright 2011 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+;
+; This program is free software; you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program; if not, write to the Free Software
+; Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+;
+; @author Cenditel Merida TSU- Miguel Angel Narvaez Montilva
+; @see http://www.cenditel.gob.ve/
+; @see http://planificacion.cenditel.gob.ve/
+; @date 2018-06-22
+; @version 0.1 // (0.1)
+
+
+name = Ente Planificador User
+description = User field of ente planificador of SIPES-APN designed in CENDITEL Venezuela
+package = Planificador - core
+core = 7.x
+version = "7.x-dev"
+project = "Planificación del SIPES"
+datestamp = "1511372368"
+project = "Planificación"
+dependencies[] = ente_planificador
+dependencies[] = entityreference

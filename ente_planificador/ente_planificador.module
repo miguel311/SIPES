@@ -31,24 +31,24 @@
 // permisos administrativos para acceder al modulo 
 function ente_planificador_permission() {
   return array(
-    'admin planner' => array(
-      'title' => t('Access to the  module Ente Planificador'),
+    'admin planificador' => array(
+      'title' => t('admin planificador'),
       'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
     ),
-    'view planner' => array(
-      'title' => t('view planner'),
+    'ver planificador' => array(
+      'title' => t('ver planificador'),
       'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
     ),
-    'edit own planner' => array(
-      'title' => t('edit own planner'),
+    'edit own planificador' => array(
+      'title' => t('edit own planificador'),
       'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
     ),
-    'edit all planner' => array(
-      'title' => t('edit all planner'),
+    'edit all planificador' => array(
+      'title' => t('edit all planificador'),
       'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
     ),
-    'admin all planner' => array(
-      'title' => t('admin all planner'),
+    'admin all planificador' => array(
+      'title' => t('admin all planificador'),
       'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
     ),
   );
@@ -125,14 +125,14 @@ function ente_planificador_menu(){
     'type' => MENU_LOCAL_ACTION,
     //'file' => 'user.admin.inc',
   );
-
+  /*
   $items['entes_planificadores/registrar'] = array(
     'title' => 'Registrar Actores Planificadores',
     'page callback' => 'entes_planificadores_agregar',
     'access arguments' => array('admin planificador'),
     'type' => MENU_NORMAL_ITEM,
   );
-
+  */
   $items['admin/settings/ente_planificador'] = array(
     'title' => t('Configuración Ente Planificador'),
     'description' => t('Configuración del Ente Planificador.'),
@@ -142,10 +142,18 @@ function ente_planificador_menu(){
 
   $items['admin/settings/ente_planificador/view'] = array(
     'title' => t('Ente Planificador'),
-    'description' => t('Configuración del Ente Planificador.'),
+    'description' => t('Configuración de views del Ente Planificador.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['administrar/entes_planificadores/registrar'] = array(
+    'title' => 'Registrar Actores Planificadores',
+    'page callback' => 'entes_planificadores_agregar',
+    'page arguments' => array(1),
+    'access arguments' => array('admin planificador'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -166,15 +174,6 @@ function ente_planificador_menu(){
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -12
   );
-/*
-  $items['administrar_usuarios'] = array(
-    'title' => 'Consultar Listado de Usuarios',
-    'description' => t('Lista de usuarios con ente planificadores.'),
-    'page callback' => 'entes_planificadores_listar_usuarios',
-    'access arguments' => array('admin planificador'),
-    'type' => MENU_NORMAL_ITEM,
-  );
-*/
   return $items;
 }
 
@@ -292,41 +291,16 @@ function ente_planificador_views_api($module = NULL, $api = NULL) {
  * Implementation of hook_form_alter().
  */
 function ente_planificador_form_alter(&$form, &$form_state, $form_id){
-
-$ente = ente_planificador_load(14);
-
-/*
-print "<pre>";
-print_r($ente);
-print "</pre>";
-*/
-
-/*
   if ($form_id == 'user_register_form'&& arg(3)) {
       $ente_planificador = arg(3); //The number of the planner entity of argument 3 given by the url is stored in the variable.
       $lang = $form['field_enteplanificador_user']['#language']; // lenguaje que se esta trabajando.
       $form['field_enteplanificador_user'][$lang]['#default_value'] = $ente_planificador; // it gives the value to the select.
       $form['field_enteplanificador_user']['#access'] = '0'; //hide the form field_enteplanificador_user.
-
-
-       //$values = $form_state->getValue('field_enteplanificador_user');
-       //$x = $form_state['field_enteplanificador_user'][$lang]['#options'];
-
-       //$x = $form['field_enteplanificador_user'][$lang][#options];
-
-      //print('<pre>');
-      //print_r($x);
-      //print('</pre>');
-      //jkldfno56456gd();
   }
-  $field_enteplanificador_user_global = $form['field_enteplanificador_user'][$lang]['#options'];
-  variable_set($field_enteplanificador_user_global);
-*/
 }
 
 /**
  * Implementation of ente_planificador_load suplandado por ente_planificador_leer_ente_planificadores().
- *
  * funcion para evitar la leida muchas veces de un ente planificador
  */
 function ente_planificador_load($ente_planificador = 0) {
@@ -364,21 +338,22 @@ print '</pre>';
   //return $ente_planificadores;
 }
 
-// hacer un arreglo de los objetos ente planificador...
-// retornar el objeto del nodo true y false...
-
-
 /*
-function entes_planificadores_listar_usuarios(){
-
-  $view = views_get_view('consultar_listado_de_usuarios');
-  $view->set_display('page');
-  $view->pre_execute();
-  $view->execute();
-  $output = $view->render();
-
-  return $output; 
+ * Implementation of hook_node_access
+ */
+function ente_planificador_node_access($node, $op, $account) {
+  if ($op == 'view') {
+    return user_access('ver planificador');
+  }
+  if ($op == 'create') {
+    return ((user_access('edit all planificador'))||(user_access('admin planificador')));
+  }
+  if ($op == 'update') {
+    if (user_access('edit all planificador') ||user_access('admin planificador') || (user_access('edit own planificador') && ($account->uid == $node->usuarios[$account->uid]))) {
+      return TRUE;
+    }
+  }
+  if ($op == 'delete') {
+    return ((user_access('edit all planificador'))||(user_access('admin planificador')));
+  }
 }
-
-
-*/

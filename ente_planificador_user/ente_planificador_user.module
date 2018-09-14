@@ -1,0 +1,187 @@
+<?php
+  /**
+  * Modulo para la gestión de los entes planificadores
+  * Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+  * @file ente_planificador.module
+  * Drupal part Module to code ente planificador module
+  * Copyright 2011 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  * 
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  * 
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * @author Cenditel Mérida TSU- Miguel Angel Narvaez Montilva
+  * @see http://www.cenditel.gob.ve/
+  * @see http://planificacion.cenditel.gob.ve/
+  */
+
+/*
+ * Implementation of hook_help
+ */
+
+// ayuda del modulo 
+function ente_planificador_user_help($path, $arg) {
+  switch ($path) {
+  // Ayuda general para el módulo Importar Terminos
+    case 'admin/help#ente_planificador':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' .'The Ente PLanificador module allows registered users to register their entities'. '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<dl>';
+      $output .= '<h3>' . t('Ayuda del modulo Ente planificador ') . '</h3>'.'<br>';
+      $output .= '<h4>' . t('Objetivo del modulo:') . '</h4>';
+      $output .= '<p>' . t('Proximamente más contenido.') . '</p>';
+
+      $output .= '<h4>' . t('Soporte técnico') . '</h4>';
+      $output .='<p>' . t('Comunícate con nosotros por la web para soporte técnico o cualquier inquietud <a href="@cenditel">cenditel</a>.', array('@cenditel' => url('http://planificacion.cenditel.gob.ve/contactos/'))) . '</p>';
+    return $output;
+  }  
+}
+
+/*
+ * implementation of hook_menu()
+ */
+function ente_planificador_user_menu(){
+
+  $items['administrar_usuarios'] = array(
+    'title' => t('Consultar Listado de Usuarios'),
+    'description' => t('Lista de usuarios con ente planificadores.'),
+    'page callback' => 'entes_planificadores_listar_usuarios',
+    'access arguments' => array('admin planificador'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/settings/ente_planificador/view_user'] = array(
+    'title' => t('Ente Planificador views en lista de usuario'),
+    'description' => t('Configuración de views de usuario en el Ente Planificador.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_user_admin_settings_form'),
+    'access callback'=> TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  //Item required to include tab in configuration ente planificador
+  $items['admin/settings/ente_planificador/view_user/settings'] = array(
+    //'title' =>  t('Configurar'),
+    'access callback'=> TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function ente_planificador_user_views_api($module = NULL, $api = NULL) {
+  return array(
+    'api' => '3',
+    'path' => drupal_get_path('module', 'ente_planificador_user') . '/views',
+  );
+}
+
+function entes_planificadores_listar_usuarios(){
+
+  //call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
+
+  if(variable_get('entepla_views_user', NULL) && variable_get('entepla_views_user_display', NULL)) {
+    $view_name = variable_get('entepla_views_user', NULL);
+    $view_page = variable_get('entepla_views_user_display', NULL);
+
+    $view = views_get_view($view_name);
+    $view->set_display($view_page);
+    $view->pre_execute();
+    $view->execute();
+    $output = $view->render();
+  }
+  else{ 
+    $loglink = l("aquí", 'admin/settings/ente_planificador/view_user');
+    $msg = t("El modulo no esta configurado para configurarlo haga clic $loglink");
+    $output = drupal_set_message($msg, $type = 'warning');
+  }
+  return $output;
+}
+
+/*
+ * Implementation of hook_form()
+ */
+function ente_planificador_user_admin_settings_form($form, &$form_state) {
+  $form['description'] = array(
+    '#type' => 'item',
+    '#title' => t('List of views to manage in the system to the link //administrar_usuarios, recomende configuration views: Consultar listado de usuarios. and type of view: page.'),
+  );
+
+  $options = array();
+  $entepla_views_user = views_get_all_views();
+  foreach ($entepla_views_user as $view){
+    $options[$view->name] = $view->human_name;
+  }
+  // form of select the list of views 
+  $form['entepla_views_user'] = array(
+    '#type'             => 'select',
+    '#default_value'    => variable_get('entepla_views_user', NULL),
+    '#required'         =>TRUE,
+    '#title'            => t('selected the views.'),
+    '#options'          => $options,
+    '#description'      => t('List of available views '),
+    '#ajax' => array(
+      'callback' => 'ente_planificador_views_ajax_display', 
+      'wrapper' => 'ajax_datos_display', 
+      'effect' => 'fade',
+      'event' => 'change',
+      'method' => 'replace',
+    ),
+  );
+
+  $form['views_container'] = array(
+    '#type' => 'container', 
+    '#prefix' => '<div id="ajax_datos_display">',
+    '#suffix' => '</div>',
+  );
+
+  if (isset($form_state['values']['entepla_views_user']) || (variable_get('entepla_views_user', NULL))){
+
+    $name = (isset($form_state['values']['entepla_views_user'])) ? $form_state['values']['entepla_views_user'] : variable_get('entepla_views_user', NULL);
+    //$name = $form_state['values']['views'];
+    $view =  views_get_view($name, 0);
+    foreach ($view->display as $key => $display){
+      $options_display[$key] = $display->display_title;
+    }
+
+    $form['views_container']['entepla_views_user_display'] = array(
+      '#type'             => 'select',
+      '#required'         =>TRUE,
+      '#title'            => t('selected the type of view.'),
+      '#default_value'    => variable_get('entepla_views_user_display', NULL),//call the value of form for system_settings_form 
+      '#options'          => $options_display,
+      '#description'      => t('List of available types of views'),
+    );
+  }
+  $form = system_settings_form($form);//autosave information of the form.
+  return $form;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function ente_planificador_user_form_alter(&$form, &$form_state, $form_id){
+  if ($form_id == 'user_profile_form') {
+    if (user_access('admin planificador')) {
+      $form['field_enteplanificador_user']['#disabled']= TRUE; //disable field field_enteplanificador_user
+    }
+    if (!user_access('admin planificador')) {
+      $form['field_enteplanificador_user']['#access'] = '0'; //hide the form field_enteplanificador_user.
+    }   
+  }
+}
