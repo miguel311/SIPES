@@ -34,3 +34,5 @@ datestamp = "1511372368"
 project = "Planificación"
 dependencies[] = ente_planificador
 dependencies[] = entityreference
+dependencies[] = views
+dependencies[] = views_ui

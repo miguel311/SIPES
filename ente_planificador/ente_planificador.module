@@ -26,35 +26,6 @@
   */
 
 /*
- * Implementation of hook permission()
- */
-// permisos administrativos para acceder al modulo 
-function ente_planificador_permission() {
-  return array(
-    'admin planificador' => array(
-      'title' => t('admin planificador'),
-      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
-    ),
-    'ver planificador' => array(
-      'title' => t('ver planificador'),
-      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
-    ),
-    'edit own planificador' => array(
-      'title' => t('edit own planificador'),
-      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
-    ),
-    'edit all planificador' => array(
-      'title' => t('edit all planificador'),
-      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
-    ),
-    'admin all planificador' => array(
-      'title' => t('admin all planificador'),
-      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
-    ),
-  );
-}
-
-/*
  * Implementation of hook_help
  */
 // ayuda del modulo 
@@ -74,43 +45,13 @@ function ente_planificador_help($path, $arg) {
   }  
 }
 
-//se crea el tipo de contenido ente planificador con el hook_node_info & hook_form
-/*
- * Implementation of hook_node_info()
- */
-function ente_planificador_node_info() {
-  return array(
-    'ente_planificador' => array(
-      'name' => t('Ente Planificador'),
-      'base' => 'ente_planificador',
-      'description' => t('Ente planificador for Drupal 7.'),
-    ),
-  );
-}
-
-/*
- * Implementation of hook_form()
- */
-function ente_planificador_form($node, &$form_state) {
-}
-
-/*ente_planificador
- * Implementation of hook_node_presave()
- */
-function ente_planificador_node_presave($node) {
-  if ($node->type =='ente_planificador') {
-    $node->title = $node->field_razon_social['und'][0]['value']; 
-    // the same information is saved from the field_razon_social in field  title
-  }
-}
-
 /*
  * implementation of hook_menu()
  */
 function ente_planificador_menu(){
   $items['administrar/entes_planificadores'] = array(    // <-- enlace url al modulo 
     'title' => 'Consultar lista de actores planificadores', // <-- titulo de hipervinculo en panel 
-    'page callback' => 'entes_planificadores_views_list', // <-- función con la que trabaja 
+    'page callback' => 'ente_planificador_list', // <-- función con la que trabaja 
     'access arguments' => array('admin planificador'), // <-- acceso restringido por hook  permission
     'type' => MENU_NORMAL_ITEM,
   );
@@ -147,6 +88,7 @@ function ente_planificador_menu(){
     'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
     'type' => MENU_NORMAL_ITEM,
+    //file
   );
 
   $items['administrar/entes_planificadores/registrar'] = array(
@@ -157,13 +99,12 @@ function ente_planificador_menu(){
     'type' => MENU_NORMAL_ITEM,
   );
 
-  //Item required to include tab in configuration ente planificador
+  /*Item required to include tab in configuration ente planificador
   $items['admin/settings/ente_planificador/view/settings'] = array(
     //'title' =>  t('Configurar'),
     'access callback'=> TRUE,
     'type' => MENU_LOCAL_TASK,
-    'weight' => -10
-  );
+  );*/
 
   $items['admin/settings/ente_planificador/view/default'] = array(
     'title' => t('Configuración de views'),
@@ -172,23 +113,23 @@ function ente_planificador_menu(){
     'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
     'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -12
+    //file
+
   );
   return $items;
 }
 
 /*
- * entes_planificadores_views_list
+ * entes_planificadores_ente_planificador_views_list
  * Lista de actores planificadores
  */
-function entes_planificadores_views_list() {
+function ente_planificador_list() {
 
 //call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
 
-  if(variable_get('entepla_views', NULL) && variable_get('entepla_views_display', NULL)) {
-    $view_name = variable_get('entepla_views', NULL);
-    $view_page = variable_get('entepla_views_display', NULL);
-
+  if(variable_get('ente_planificador_views_list', NULL) && variable_get('ente_planificador_display_views', NULL)) {
+    $view_name = variable_get('ente_planificador_views_list', 'list_actores_planificador');
+    $view_page = variable_get('ente_planificador_display_views', 'Master');
     $view = views_get_view($view_name);
     $view->set_display($view_page);
     $view->pre_execute();
@@ -196,8 +137,12 @@ function entes_planificadores_views_list() {
     $output = $view->render();
   }
   else{ 
-    $loglink = l("aquí", 'admin/settings/ente_planificador/view');
-    $msg = t("El modulo no esta configurado para configurarlo haga clic $loglink");
+
+//https://api.drupal.org/api/drupal/includes%21bootstrap.inc/function/t/7.x
+//https://www.drupal.org/docs/7/security/writing-secure-code/handle-text-in-a-secure-fashion
+//https://drupalize.me/system/files/video/companion_files/security-d7-cheatsheet.pdf
+
+    $msg = t("El modulo no esta configurado para configurarlo haga clic !url.", array('!url' => l(t('aquí'), "admin/settings/ente_planificador/view")));
     $output = drupal_set_message($msg, $type = 'warning');
   }
   return $output;
@@ -221,21 +166,22 @@ function ente_planificador_admin_settings_form($form, &$form_state) {
   );
 
   $options = array();
-  $entepla_views = views_get_all_views();
-  foreach ($entepla_views as $view){
+  $views = views_get_all_views();
+  foreach ($views as $view){
     $options[$view->name] = $view->human_name;
   }
   // form of select the list of views 
-  $form['entepla_views'] = array(
+  //$form̈́['ente_planificador_views_list'] = array(
+  $form['ente_planificador_views_list'] = array(
     '#type'             => 'select',
-    '#default_value'    => variable_get('entepla_views', NULL),
+    '#default_value'    => variable_get('ente_planificador_views_list', 'list_actores_planificador'),
     '#required'         =>TRUE,
     '#title'            => t('selected the views.'),
     '#options'          => $options,
     '#description'      => t('List of available views '),
     '#ajax' => array(
       'callback' => 'ente_planificador_views_ajax_display', 
-      'wrapper' => 'ajax_datos_display', 
+      'wrapper' => 'views-container-display', 
       'effect' => 'fade',
       'event' => 'change',
       'method' => 'replace',
@@ -244,26 +190,27 @@ function ente_planificador_admin_settings_form($form, &$form_state) {
 
   $form['views_container'] = array(
     '#type' => 'container', 
-    '#prefix' => '<div id="ajax_datos_display">',
+    '#prefix' => '<div id="views-container-display">',
     '#suffix' => '</div>',
   );
 
-  if (isset($form_state['values']['entepla_views']) || (variable_get('entepla_views', NULL))){
+  if (isset($form_state['values']['ente_planificador_views_list']) || (variable_get('ente_planificador_views_list', NULL))){
 
-    $name = (isset($form_state['values']['entepla_views'])) ? $form_state['values']['entepla_views'] : variable_get('entepla_views', NULL);
+    $name = (isset($form_state['values']['ente_planificador_views_list'])) ? $form_state['values']['ente_planificador_views_list'] : variable_get('ente_planificador_views_list', 'list_actores_planificador');
     //$name = $form_state['values']['views'];
     $view =  views_get_view($name, 0);
     foreach ($view->display as $key => $display){
       $options_display[$key] = $display->display_title;
     }
 
-    $form['views_container']['entepla_views_display'] = array(
-      '#type'             => 'select',
-      '#required'         =>TRUE,
-      '#title'            => t('selected the type of view.'),
-      '#default_value'    => variable_get('entepla_views_display', NULL),//call the value of form for system_settings_form 
-      '#options'          => $options_display,
-      '#description'      => t('List of available types of views'),
+    //$form['views_container']['ente_planificador_display_views'] = array(
+    $form['views_container']['ente_planificador_display_views'] = array(
+      '#type'  =>  'select',
+      '#required'  =>  TRUE,
+      '#title'  =>  t('selected the type of view.'),
+      '#default_value'  =>  variable_get('ente_planificador_display_views', 'Master'),//call the value of form for system_settings_form 
+      '#options'  =>  $options_display,
+      '#description'  =>  t('List of available types of views'),
     );
   }
   $form = system_settings_form($form);//autosave information of the form.
@@ -277,6 +224,35 @@ function ente_planificador_views_ajax_display($form, &$form_state) {
   return $form['views_container'];
 }
 
+/*
+ * Implementation of hook permission()
+ */
+// permisos administrativos para acceder al modulo 
+function ente_planificador_permission() {
+  return array(
+    'admin planificador' => array(
+      'title' => t('admin planificador'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'ver planificador' => array(
+      'title' => t('ver planificador'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'edit own planificador' => array(
+      'title' => t('edit own planificador'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'edit all planificador' => array(
+      'title' => t('edit all planificador'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+    'admin all planificador' => array(
+      'title' => t('admin all planificador'),
+      'description' => t('Possibility of accessing to work with the module ente planificador and the functionalities incorporated in it.'),
+    ),
+  );
+}
+
 /**
  * Implementation of hook_views_api().
  */
@@ -287,73 +263,176 @@ function ente_planificador_views_api($module = NULL, $api = NULL) {
   );
 }
 
-/**
- * Implementation of hook_form_alter().
+
+//se crea el tipo de contenido ente planificador con el hook_node_info & hook_form
+/*
+ * Implementation of hook_node_info()
  */
-function ente_planificador_form_alter(&$form, &$form_state, $form_id){
-  if ($form_id == 'user_register_form'&& arg(3)) {
-      $ente_planificador = arg(3); //The number of the planner entity of argument 3 given by the url is stored in the variable.
-      $lang = $form['field_enteplanificador_user']['#language']; // lenguaje que se esta trabajando.
-      $form['field_enteplanificador_user'][$lang]['#default_value'] = $ente_planificador; // it gives the value to the select.
-      $form['field_enteplanificador_user']['#access'] = '0'; //hide the form field_enteplanificador_user.
+function ente_planificador_node_info() {
+  return array(
+    'ente_planificador' => array(
+      'name' => t('Ente Planificador'),
+      'base' => 'node_content',
+      'description' => t('Ente planificador for Drupal 7.'),
+    ),
+  );
+}
+
+/*ente_planificador
+ * Implementation of hook_node_presave()
+ */
+function ente_planificador_node_presave($node) {
+  //isset($node->language) : LANGUAGE_NONE;
+  jkosdnfsdn();
+
+  if ($node->type =='ente_planificador') {
+    $node->title = $node->field_razon_social['und'][0]['value']; 
+    // the same information is saved from the field_razon_social in field  title
   }
 }
+
+/*
+ * Implementation of hook_node_access
+ * Control access to a node.
+ */
+function ente_planificador_node_access($node, $op, $account) {
+  $type = is_string($node) ? $node : $node->type;
+  if ($type == 'ente_planificador' ) {
+    if ($op == 'view') {
+      return (user_access('ver planificador')) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
+    }
+    if ($op == 'create') {
+      return ((user_access('edit all planificador'))||(user_access('admin planificador'))) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
+    }
+    if ($op == 'update') {
+      return (user_access('edit all planificador') || user_access('admin planificador') || (user_access('edit own planificador') && ($account->uid == $node->usuarios[$account->uid]))) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
+    }
+    if ($op == 'delete') {
+      return ((user_access('edit all planificador'))||(user_access('admin planificador'))) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
+    }
+  }
+  // Returning nothing from this function would have the same effect.
+  return NODE_ACCESS_IGNORE;
+}
+
 
 /**
  * Implementation of ente_planificador_load suplandado por ente_planificador_leer_ente_planificadores().
  * funcion para evitar la leida muchas veces de un ente planificador
  */
 function ente_planificador_load($ente_planificador = 0) {
-  //example https://api.drupal.org/api/drupal/includes%21common.inc/function/entity_get_controller/7.x
   $ente_planificadores = &drupal_static(__FUNCTION__); // guardado valor de nid en $ente_planificador_load
  
- // si es numerico y si no existe el arreglo $ente_planificadores[$ente_planificador] entra
   if (is_numeric($ente_planificador) && !isset($ente_planificadores[$ente_planificador])) {
-    $ente_planificador_leido = node_load($ente_planificador); // carga nodo de la base de datos
-    if ($ente_planificador_leido->type == 'ente_planificador') { // si es de tipo ente planificador 
-     $ente_planificadores[$ente_planificador_leido->nid] = $ente_planificador_leido; 
-     // agrega el nid del nodo a la variable ente_planificador_leido
+    if ($ente_planificador_leido = node_load($ente_planificador)) {
+      if ($ente_planificador_leido->type == 'ente_planificador') { 
+       $ente_planificadores[$ente_planificador_leido->nid] = $ente_planificador_leido; 
+      }
     }
-  } // si en un objeto $ente_planificador no exite la variable con un nid $ente_planificadores[$ente_planificador->nid]
-  else if (is_object($ente_planificador) && !isset($ente_planificadores[$ente_planificador->nid])) {
-    $ente_planificadores[$ente_planificador->nid] = $ente_planificador;
-    $ente_planificador = $ente_planificador->nid;
   }
-  else {
-    //entra en memoria   
-    //drupal_static_reset($name = 'ente_planificador_load'); // reset la variable.
-    /*
-    print '<pre>';
-    print_r($ente_planificadores[$ente_planificador]);
-    print '</pre>';*/
-  }
-/*
-print '<pre>';
-print_r($ente_planificadores);
-print '</pre>';
-*/
-
   return isset($ente_planificadores[$ente_planificador]) ? $ente_planificadores[$ente_planificador] : FALSE;
+}
 
-  //return $ente_planificadores;
+
+/*
+ * Implementation of ente_planificador_usuario_ve_ente()
+ */
+function ente_planificador_usuario_ve_ente() {
+  global $user;
+  if (user_access('edit own planificador')) {
+    $entes = usuario_tiene_ente($user->uid);
+    if (is_array($entes) && array_values($entes)) {
+      return true;
+    }
+  }
+  return FALSE;
 }
 
 /*
- * Implementation of hook_node_access
+ * usuario_tiene_ente
+ * retorna los entes que tiene un usuario
  */
-function ente_planificador_node_access($node, $op, $account) {
-  if ($op == 'view') {
-    return user_access('ver planificador');
-  }
-  if ($op == 'create') {
-    return ((user_access('edit all planificador'))||(user_access('admin planificador')));
-  }
-  if ($op == 'update') {
-    if (user_access('edit all planificador') ||user_access('admin planificador') || (user_access('edit own planificador') && ($account->uid == $node->usuarios[$account->uid]))) {
-      return TRUE;
+function usuario_tiene_ente($uid) {
+  $entes = array();
+  $user = user_load($uid);
+  $lang = (!empty($user->language)) ? $user->language : LANGUAGE_NONE;
+  if ($field_enteplanificador = $user->field_enteplanificador_user) {
+    $nids = array();
+    foreach ($field_enteplanificador[$lang] as $values) {
+      $nids[$values['target_id']] = $values['target_id'];
+    }
+
+    if (count($nids)) {
+      $entes = node_load_multiple($nids);
     }
   }
-  if ($op == 'delete') {
-    return ((user_access('edit all planificador'))||(user_access('admin planificador')));
+  return $entes;
+}
+
+/*
+ * Implementation of hook_block_info()
+ * informar a Drupal de la existencia de nuestro bloque
+ */
+function ente_planificador_block_info(){
+    $blocks['ente_planificador_user_current'] = array(
+    'info' => t('user current'), 
+    'cache' => DRUPAL_NO_CACHE,
+    //'status' => TRUE,
+    //'region' => 'header',
+    //'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+    //'pages' => '/'
+  );
+  return $blocks;
+}
+
+/*
+ * Implementation of hook_block_view()
+ * definir el contenido del bloque que se hará uso
+ */
+function ente_planificador_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'ente_planificador_user_current':
+      $block['subject'] = t('user current'); 
+      // Función que retorna el contenido o función que se quiere en el bloque.
+      $block['content'] = ente_planificador_block_of_user_login(); 
+      break;
+    }
+    return $block;
+}
+
+/*
+ * Implementation of ente_planificador_block_of_user_login()
+ */
+function ente_planificador_block_of_user_login() {
+  $view = views_get_view('ente_planificador_block_user_current');
+  $view->set_display('block');
+  $view->pre_execute();
+  $view->execute();
+  $output = $view->render();
+  return $output;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function ente_planificador_form_alter(&$form, &$form_state, $form_id){
+  //user_profile_form
+  if (arg(3) && is_numeric(arg(3))) {
+    if ($form_id == 'user_register_form' && ente_planificador_load(arg(3))) {
+      $ente_planificador = arg(3); //The number of the planner entity of argument 3 given by the url is stored in the variable.
+      $lang = $form['field_enteplanificador_user']['#language']; // lenguaje que se esta trabajando.
+      $form['field_enteplanificador_user'][$lang]['#default_value'] = $ente_planificador; // it gives the value to the select.
+      $form['field_enteplanificador_user']['#access'] = FALSE;
+
+      /*
+        if (ente_planificador_usuario_ve_ente()) {
+          print_r(ente_planificador_usuario_ve_ente());
+        }
+      */
+    }
+    else {
+      $form['field_enteplanificador_user']['#access'] = FALSE;
+    }
   }
 }

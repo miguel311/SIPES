@@ -30,6 +30,10 @@
  */
 
 function ente_planificador_user_install(){
+  //configure the views admin/settings/ente_planificador/view_user
+  //variable_set('views_list_user', 'consultar_listado_de_usuarios');
+  //variable_set('display_views_user', 'page');
+
   //creando los campos
   foreach(ente_planificador_user_installed_fields() as $field){
   //comprobación de la existencia del campo. 
@@ -55,8 +59,8 @@ function ente_planificador_user_install(){
 
 function ente_planificador_user_uninstall() {  
 
-  variable_del('entepla_views_user');
-  variable_del('entepla_views_user_display');
+  variable_del('views_list_user');
+  variable_del('display_views_user');
   
   /**
  * Implementation of hook_uninstall()

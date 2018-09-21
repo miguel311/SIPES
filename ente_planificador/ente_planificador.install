@@ -31,8 +31,11 @@
  * Implementation of hook_install
  */
 function ente_planificador_install() {
-//creation of vocabulary.
+  //configure the views admin/settings/ente_planificador/view
+  //variable_set('views_list', 'list_actores_planificador');
+  //variable_set('display_views', 'Master');
 
+//creation of vocabulary.
 //creando los campos
   foreach(ente_planificador_installed_fields() as $field){
     //comprobación de la existencia del campo. 
@@ -51,8 +54,9 @@ function ente_planificador_install() {
 
   //Creación de el vocabulario en el sistema
   //Devuelve el objeto de vocabulario que coincide con una ID de vocabulario.
-  $vocabulary = taxonomy_vocabulary_load(variable_get('location_vocabulary', 0));
-  //de no existir el vocabulario se crea el vocabulario en taxonomia
+  $vocabulary = taxonomy_vocabulary_load(variable_get('ente_planificador_location_vocabulary', 0));
+  //de no existir el vocabulario se crea el vocabulario en taxonomia}
+
   if (!$vocabulary) {
     $edit = array(
       'name' => t('Location'),
@@ -63,8 +67,8 @@ function ente_planificador_install() {
       'weight' => -10,
       );
     $vocabulary = (object) $edit;
-  taxonomy_vocabulary_save($vocabulary); //crea el vocabulario en taxonomia
-  variable_set('location_vocabulary', $vocabulary->vid); //establece la variable location_vocabulary con el vid del voabulario
+    taxonomy_vocabulary_save($vocabulary); //crea el vocabulario en taxonomia
+    variable_set('ente_planificador_location_vocabulary', $vocabulary->vid); //establece la variable location_vocabulary con el vid del voabulario
   }
 }
 /**
@@ -74,13 +78,17 @@ function ente_planificador_install() {
 
 function ente_planificador_uninstall() {  
   //delete the persistent variable. 
-  variable_del('entepla_views');
-  variable_del('entepla_views_display');
-
+  variable_del('ente_planificador_views_list');
+  variable_del('ente_planificador_display_views');
+  //$vocabulary = taxonomy_vocabulary_load(variable_get('location_vocabulary', 0));
+  //taxonomy_vocabulary_delete($vocabulary->vid);
   /**
   *@see Si se descomenta y se desinstala el modulo borrara toda la información de los campos y lo que contiene en la base de datos.
   */
   /*
+
+    taxonomy_vocabulary_delete(); location_vocabulary
+
   //elimina las instancias de los campos
   foreach(ente_planificador_installed_instances() as $instance){
     field_delete_instance($instance, $field_cleanup = TRUE);
@@ -91,7 +99,6 @@ function ente_planificador_uninstall() {
   }
   */
 }
-
 
 /*
  * Implementation of function ente_planificador_installed_fields
@@ -212,11 +219,9 @@ function ente_planificador_installed_instances(){
       ),
       'settings' => array(
         'target_type' => 'taxonomy_term',
-        'handler_settings' => array('target_bundles' => array('location'))
+        'handler_settings' => array('target_bundles' => array(variable_get('ente_planificador_location_vocabulary', 0)))
       ),
     ),
   );
 }
-
-
 

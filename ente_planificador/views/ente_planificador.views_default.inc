@@ -146,6 +146,120 @@ function ente_planificador_views_default_views() {
   $handler->display->display_options['filters']['type']['value'] = array(
     'ente_planificador' => 'ente_planificador',
   );
+  // Add view to list of views to provide.
   $views[$view->name] = $view;
+
+  //Views of Block for user 
+  $view = new view();
+  $view->name = 'ente_planificador_block_user_current';
+  $view->description = '';
+  $view->tag = 'default';
+  $view->base_table = 'users';
+  $view->human_name = 'block user info ente planificador';
+  $view->core = 7;
+  $view->api_version = '3.0';
+  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+
+  /* Display: Master */
+  $handler = $view->new_display('default', 'Master', 'default');
+  $handler->display->display_options['title'] = 'block of user current';
+  $handler->display->display_options['use_more_always'] = FALSE;
+  $handler->display->display_options['access']['type'] = 'perm';
+  $handler->display->display_options['access']['perm'] = 'access user profiles';
+  $handler->display->display_options['cache']['type'] = 'none';
+  $handler->display->display_options['query']['type'] = 'views_query';
+  $handler->display->display_options['exposed_form']['type'] = 'basic';
+  $handler->display->display_options['pager']['type'] = 'some';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '8';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['style_plugin'] = 'jump_menu';
+  $handler->display->display_options['row_plugin'] = 'fields';
+  /* Field: User: Name */
+  $handler->display->display_options['fields']['name']['id'] = 'name';
+  $handler->display->display_options['fields']['name']['table'] = 'users';
+  $handler->display->display_options['fields']['name']['field'] = 'name';
+  $handler->display->display_options['fields']['name']['label'] = '';
+  $handler->display->display_options['fields']['name']['alter']['word_boundary'] = FALSE;
+  $handler->display->display_options['fields']['name']['alter']['ellipsis'] = FALSE;
+  /* Sort criterion: User: Created date */
+  $handler->display->display_options['sorts']['created']['id'] = 'created';
+  $handler->display->display_options['sorts']['created']['table'] = 'users';
+  $handler->display->display_options['sorts']['created']['field'] = 'created';
+  $handler->display->display_options['sorts']['created']['order'] = 'DESC';
+  /* Filter criterion: User: Active */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'users';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = '1';
+  $handler->display->display_options['filters']['status']['group'] = 1;
+  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+
+  /* Display: Block */
+  $handler = $view->new_display('block', 'Block', 'block');
+  $handler->display->display_options['defaults']['pager'] = FALSE;
+  $handler->display->display_options['pager']['type'] = 'some';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '1';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['defaults']['style_plugin'] = FALSE;
+  $handler->display->display_options['style_plugin'] = 'grid';
+  $handler->display->display_options['style_options']['columns'] = '1';
+  $handler->display->display_options['defaults']['style_options'] = FALSE;
+  $handler->display->display_options['defaults']['row_plugin'] = FALSE;
+  $handler->display->display_options['row_plugin'] = 'fields';
+  $handler->display->display_options['row_options']['inline'] = array(
+    'name' => 'name',
+    'field_ente_user_nombre' => 'field_ente_user_nombre',
+    'field_ente_user_apellido' => 'field_ente_user_apellido',
+    'field_ente_user_cedula' => 'field_ente_user_cedula',
+    'field_enteplanificador_user' => 'field_enteplanificador_user',
+  );
+  $handler->display->display_options['row_options']['separator'] = '<br>';
+  $handler->display->display_options['defaults']['row_options'] = FALSE;
+  $handler->display->display_options['defaults']['fields'] = FALSE;
+  /* Field: User: Name */
+  $handler->display->display_options['fields']['name']['id'] = 'name';
+  $handler->display->display_options['fields']['name']['table'] = 'users';
+  $handler->display->display_options['fields']['name']['field'] = 'name';
+  $handler->display->display_options['fields']['name']['label'] = '';
+  $handler->display->display_options['fields']['name']['alter']['word_boundary'] = FALSE;
+  $handler->display->display_options['fields']['name']['alter']['ellipsis'] = FALSE;
+  /* Field: User: Nombre de usuario */
+  $handler->display->display_options['fields']['field_ente_user_nombre']['id'] = 'field_ente_user_nombre';
+  $handler->display->display_options['fields']['field_ente_user_nombre']['table'] = 'field_data_field_ente_user_nombre';
+  $handler->display->display_options['fields']['field_ente_user_nombre']['field'] = 'field_ente_user_nombre';
+  /* Field: User: Apellido de usuario */
+  $handler->display->display_options['fields']['field_ente_user_apellido']['id'] = 'field_ente_user_apellido';
+  $handler->display->display_options['fields']['field_ente_user_apellido']['table'] = 'field_data_field_ente_user_apellido';
+  $handler->display->display_options['fields']['field_ente_user_apellido']['field'] = 'field_ente_user_apellido';
+  /* Field: User: Cedula de identidad de usuario */
+  $handler->display->display_options['fields']['field_ente_user_cedula']['id'] = 'field_ente_user_cedula';
+  $handler->display->display_options['fields']['field_ente_user_cedula']['table'] = 'field_data_field_ente_user_cedula';
+  $handler->display->display_options['fields']['field_ente_user_cedula']['field'] = 'field_ente_user_cedula';
+  $handler->display->display_options['fields']['field_ente_user_cedula']['label'] = 'Cedula ';
+  /* Field: User: Ente Planificador */
+  $handler->display->display_options['fields']['field_enteplanificador_user']['id'] = 'field_enteplanificador_user';
+  $handler->display->display_options['fields']['field_enteplanificador_user']['table'] = 'field_data_field_enteplanificador_user';
+  $handler->display->display_options['fields']['field_enteplanificador_user']['field'] = 'field_enteplanificador_user';
+  $handler->display->display_options['fields']['field_enteplanificador_user']['settings'] = array(
+    'bypass_access' => 0,
+    'link' => 0,
+  );
+  $handler->display->display_options['defaults']['filter_groups'] = FALSE;
+  $handler->display->display_options['defaults']['filters'] = FALSE;
+  /* Filter criterion: User: Active */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'users';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = '1';
+  $handler->display->display_options['filters']['status']['group'] = 1;
+  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+  /* Filter criterion: User: Current */
+  $handler->display->display_options['filters']['uid_current']['id'] = 'uid_current';
+  $handler->display->display_options['filters']['uid_current']['table'] = 'users';
+  $handler->display->display_options['filters']['uid_current']['field'] = 'uid_current';
+  $handler->display->display_options['filters']['uid_current']['value'] = '1';
+  // Add view to list of views to provide.
+  $views[$view->name] = $view;
+
   return $views;
 }

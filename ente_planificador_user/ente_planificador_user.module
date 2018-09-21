@@ -41,7 +41,6 @@ function ente_planificador_user_help($path, $arg) {
       $output .= '<h3>' . t('Ayuda del modulo Ente planificador ') . '</h3>'.'<br>';
       $output .= '<h4>' . t('Objetivo del modulo:') . '</h4>';
       $output .= '<p>' . t('Proximamente más contenido.') . '</p>';
-
       $output .= '<h4>' . t('Soporte técnico') . '</h4>';
       $output .='<p>' . t('Comunícate con nosotros por la web para soporte técnico o cualquier inquietud <a href="@cenditel">cenditel</a>.', array('@cenditel' => url('http://planificacion.cenditel.gob.ve/contactos/'))) . '</p>';
     return $output;
@@ -95,9 +94,9 @@ function entes_planificadores_listar_usuarios(){
 
   //call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
 
-  if(variable_get('entepla_views_user', NULL) && variable_get('entepla_views_user_display', NULL)) {
-    $view_name = variable_get('entepla_views_user', NULL);
-    $view_page = variable_get('entepla_views_user_display', NULL);
+  if(variable_get('ente_planificador_user_views_list', NULL) && variable_get('ente_planificador_user_display_views', NULL)) {
+    $view_name = variable_get('ente_planificador_user_views_list', 'consultar_listado_de_usuarios');
+    $view_page = variable_get('ente_planificador_user_display_views', 'page');
 
     $view = views_get_view($view_name);
     $view->set_display($view_page);
@@ -106,8 +105,11 @@ function entes_planificadores_listar_usuarios(){
     $output = $view->render();
   }
   else{ 
-    $loglink = l("aquí", 'admin/settings/ente_planificador/view_user');
-    $msg = t("El modulo no esta configurado para configurarlo haga clic $loglink");
+
+    $msg = t("El modulo no esta configurado para configurarlo haga clic !url.", array('!url' => l(t('aquí'), "admin/settings/ente_planificador/view_user")));
+
+    //$loglink = l("aquí", 'admin/settings/ente_planificador/view_user');
+    //$msg = t("El modulo no esta configurado para configurarlo haga clic $loglink");
     $output = drupal_set_message($msg, $type = 'warning');
   }
   return $output;
@@ -123,21 +125,21 @@ function ente_planificador_user_admin_settings_form($form, &$form_state) {
   );
 
   $options = array();
-  $entepla_views_user = views_get_all_views();
-  foreach ($entepla_views_user as $view){
+  $views_list_user = views_get_all_views();
+  foreach ($views_list_user as $view){
     $options[$view->name] = $view->human_name;
   }
   // form of select the list of views 
-  $form['entepla_views_user'] = array(
+  $form['ente_planificador_user_views_list'] = array(
     '#type'             => 'select',
-    '#default_value'    => variable_get('entepla_views_user', NULL),
+    '#default_value'    => variable_get('ente_planificador_user_views_list', 'consultar_listado_de_usuarios'),
     '#required'         =>TRUE,
     '#title'            => t('selected the views.'),
     '#options'          => $options,
     '#description'      => t('List of available views '),
     '#ajax' => array(
       'callback' => 'ente_planificador_views_ajax_display', 
-      'wrapper' => 'ajax_datos_display', 
+      'wrapper' => 'display-container-views', 
       'effect' => 'fade',
       'event' => 'change',
       'method' => 'replace',
@@ -146,26 +148,26 @@ function ente_planificador_user_admin_settings_form($form, &$form_state) {
 
   $form['views_container'] = array(
     '#type' => 'container', 
-    '#prefix' => '<div id="ajax_datos_display">',
+    '#prefix' => '<div id="display-container-views">',
     '#suffix' => '</div>',
   );
 
-  if (isset($form_state['values']['entepla_views_user']) || (variable_get('entepla_views_user', NULL))){
+  if (isset($form_state['values']['ente_planificador_user_views_list']) || (variable_get('ente_planificador_user_views_list', NULL))){
 
-    $name = (isset($form_state['values']['entepla_views_user'])) ? $form_state['values']['entepla_views_user'] : variable_get('entepla_views_user', NULL);
+    $name = (isset($form_state['values']['ente_planificador_user_views_list'])) ? $form_state['values']['ente_planificador_user_views_list'] : variable_get('ente_planificador_user_views_list', 'consultar_listado_de_usuarios');
     //$name = $form_state['values']['views'];
     $view =  views_get_view($name, 0);
     foreach ($view->display as $key => $display){
       $options_display[$key] = $display->display_title;
     }
 
-    $form['views_container']['entepla_views_user_display'] = array(
-      '#type'             => 'select',
-      '#required'         =>TRUE,
-      '#title'            => t('selected the type of view.'),
-      '#default_value'    => variable_get('entepla_views_user_display', NULL),//call the value of form for system_settings_form 
-      '#options'          => $options_display,
-      '#description'      => t('List of available types of views'),
+    $form['views_container']['ente_planificador_user_display_views'] = array(
+      '#type'  => 'select',
+      '#required'  =>TRUE,
+      '#title'  => t('selected the type of view.'),
+      '#default_value'  => variable_get('ente_planificador_user_display_views', 'page'),//call the value of form for system_settings_form 
+      '#options'  => $options_display,
+      '#description'  => t('List of available types of views'),
     );
   }
   $form = system_settings_form($form);//autosave information of the form.
@@ -180,8 +182,8 @@ function ente_planificador_user_form_alter(&$form, &$form_state, $form_id){
     if (user_access('admin planificador')) {
       $form['field_enteplanificador_user']['#disabled']= TRUE; //disable field field_enteplanificador_user
     }
-    if (!user_access('admin planificador')) {
-      $form['field_enteplanificador_user']['#access'] = '0'; //hide the form field_enteplanificador_user.
+    else {
+      $form['field_enteplanificador_user']['#access'] = FALSE; //hide the form field_enteplanificador_user.
     }   
   }
 }

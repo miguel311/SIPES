@@ -33,3 +33,5 @@ project = "Planificación del SIPES"
 configure = admin/settings/ente_planificador/view
 datestamp = "1511372368"
 project = "Planificación"
+dependencies[] = views
+dependencies[] = views_ui
