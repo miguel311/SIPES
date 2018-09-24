@@ -62,7 +62,7 @@ function ente_planificador_menu(){
     'title' => 'Add user',
     //'page callback' => 'user_admin',
     //'page arguments' => array('create'),
-    'access arguments' => array('administer users'),// verificar que el nodoe s de ente planificador.
+    'access arguments' => array('administer users'),// verificar que el nodoes de ente planificador.
     'type' => MENU_LOCAL_ACTION,
     //'file' => 'user.admin.inc',
   );
@@ -88,7 +88,7 @@ function ente_planificador_menu(){
     'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
     'type' => MENU_NORMAL_ITEM,
-    //file
+    'file' => 'ente_planificador.admin.inc',
   );
 
   $items['administrar/entes_planificadores/registrar'] = array(
@@ -113,7 +113,7 @@ function ente_planificador_menu(){
     'page arguments' => array('ente_planificador_admin_settings_form'),
     'access callback'=> TRUE,
     'type' => MENU_DEFAULT_LOCAL_TASK,
-    //file
+    'file' => 'ente_planificador.admin.inc',
 
   );
   return $items;
@@ -126,8 +126,8 @@ function ente_planificador_menu(){
 function ente_planificador_list() {
 
 //call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
-
-  if(variable_get('ente_planificador_views_list', NULL) && variable_get('ente_planificador_display_views', NULL)) {
+// if ente_planificador_views_list is empity remplace from list_actores_planificador
+  if(variable_get('ente_planificador_views_list', 'list_actores_planificador') && variable_get('ente_planificador_display_views', 'Master')) {
     $view_name = variable_get('ente_planificador_views_list', 'list_actores_planificador');
     $view_page = variable_get('ente_planificador_display_views', 'Master');
     $view = views_get_view($view_name);
@@ -156,73 +156,6 @@ function entes_planificadores_agregar() {
   drupal_goto('node/add/ente-planificador');
 }
 
-/*
- * Implementation of hook_form()
- */
-function ente_planificador_admin_settings_form($form, &$form_state) {
-  $form['description'] = array(
-    '#type' => 'item',
-    '#title' => t('List of views to manage in the system'),
-  );
-
-  $options = array();
-  $views = views_get_all_views();
-  foreach ($views as $view){
-    $options[$view->name] = $view->human_name;
-  }
-  // form of select the list of views 
-  //$form̈́['ente_planificador_views_list'] = array(
-  $form['ente_planificador_views_list'] = array(
-    '#type'             => 'select',
-    '#default_value'    => variable_get('ente_planificador_views_list', 'list_actores_planificador'),
-    '#required'         =>TRUE,
-    '#title'            => t('selected the views.'),
-    '#options'          => $options,
-    '#description'      => t('List of available views '),
-    '#ajax' => array(
-      'callback' => 'ente_planificador_views_ajax_display', 
-      'wrapper' => 'views-container-display', 
-      'effect' => 'fade',
-      'event' => 'change',
-      'method' => 'replace',
-    ),
-  );
-
-  $form['views_container'] = array(
-    '#type' => 'container', 
-    '#prefix' => '<div id="views-container-display">',
-    '#suffix' => '</div>',
-  );
-
-  if (isset($form_state['values']['ente_planificador_views_list']) || (variable_get('ente_planificador_views_list', NULL))){
-
-    $name = (isset($form_state['values']['ente_planificador_views_list'])) ? $form_state['values']['ente_planificador_views_list'] : variable_get('ente_planificador_views_list', 'list_actores_planificador');
-    //$name = $form_state['values']['views'];
-    $view =  views_get_view($name, 0);
-    foreach ($view->display as $key => $display){
-      $options_display[$key] = $display->display_title;
-    }
-
-    //$form['views_container']['ente_planificador_display_views'] = array(
-    $form['views_container']['ente_planificador_display_views'] = array(
-      '#type'  =>  'select',
-      '#required'  =>  TRUE,
-      '#title'  =>  t('selected the type of view.'),
-      '#default_value'  =>  variable_get('ente_planificador_display_views', 'Master'),//call the value of form for system_settings_form 
-      '#options'  =>  $options_display,
-      '#description'  =>  t('List of available types of views'),
-    );
-  }
-  $form = system_settings_form($form);//autosave information of the form.
-  return $form;
-}
-
-/*
- * Implementation of function ente_planificador_views_ajax_display   
- */ 
-function ente_planificador_views_ajax_display($form, &$form_state) {
-  return $form['views_container'];
-}
 
 /*
  * Implementation of hook permission()
@@ -282,11 +215,9 @@ function ente_planificador_node_info() {
  * Implementation of hook_node_presave()
  */
 function ente_planificador_node_presave($node) {
-  //isset($node->language) : LANGUAGE_NONE;
-  jkosdnfsdn();
-
   if ($node->type =='ente_planificador') {
-    $node->title = $node->field_razon_social['und'][0]['value']; 
+    $lang = (!empty($node->language)) ? $node->language : LANGUAGE_NONE;
+    $node->title = $node->field_razon_social[$lang][0]['value']; 
     // the same information is saved from the field_razon_social in field  title
   }
 }

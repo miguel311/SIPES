@@ -67,6 +67,7 @@ function ente_planificador_user_menu(){
     'page arguments' => array('ente_planificador_user_admin_settings_form'),
     'access callback'=> TRUE,
     'type' => MENU_NORMAL_ITEM,
+    'file' => 'ente_planificador_user.admin.inc',
   );
 
   //Item required to include tab in configuration ente planificador
@@ -94,7 +95,7 @@ function entes_planificadores_listar_usuarios(){
 
   //call the name and display of view can see in this function this is controller for ente_planificador_admin_settings_form
 
-  if(variable_get('ente_planificador_user_views_list', NULL) && variable_get('ente_planificador_user_display_views', NULL)) {
+  if(variable_get('ente_planificador_user_views_list', 'consultar_listado_de_usuarios') && variable_get('ente_planificador_user_display_views', 'page')) {
     $view_name = variable_get('ente_planificador_user_views_list', 'consultar_listado_de_usuarios');
     $view_page = variable_get('ente_planificador_user_display_views', 'page');
 
@@ -113,65 +114,6 @@ function entes_planificadores_listar_usuarios(){
     $output = drupal_set_message($msg, $type = 'warning');
   }
   return $output;
-}
-
-/*
- * Implementation of hook_form()
- */
-function ente_planificador_user_admin_settings_form($form, &$form_state) {
-  $form['description'] = array(
-    '#type' => 'item',
-    '#title' => t('List of views to manage in the system to the link //administrar_usuarios, recomende configuration views: Consultar listado de usuarios. and type of view: page.'),
-  );
-
-  $options = array();
-  $views_list_user = views_get_all_views();
-  foreach ($views_list_user as $view){
-    $options[$view->name] = $view->human_name;
-  }
-  // form of select the list of views 
-  $form['ente_planificador_user_views_list'] = array(
-    '#type'             => 'select',
-    '#default_value'    => variable_get('ente_planificador_user_views_list', 'consultar_listado_de_usuarios'),
-    '#required'         =>TRUE,
-    '#title'            => t('selected the views.'),
-    '#options'          => $options,
-    '#description'      => t('List of available views '),
-    '#ajax' => array(
-      'callback' => 'ente_planificador_views_ajax_display', 
-      'wrapper' => 'display-container-views', 
-      'effect' => 'fade',
-      'event' => 'change',
-      'method' => 'replace',
-    ),
-  );
-
-  $form['views_container'] = array(
-    '#type' => 'container', 
-    '#prefix' => '<div id="display-container-views">',
-    '#suffix' => '</div>',
-  );
-
-  if (isset($form_state['values']['ente_planificador_user_views_list']) || (variable_get('ente_planificador_user_views_list', NULL))){
-
-    $name = (isset($form_state['values']['ente_planificador_user_views_list'])) ? $form_state['values']['ente_planificador_user_views_list'] : variable_get('ente_planificador_user_views_list', 'consultar_listado_de_usuarios');
-    //$name = $form_state['values']['views'];
-    $view =  views_get_view($name, 0);
-    foreach ($view->display as $key => $display){
-      $options_display[$key] = $display->display_title;
-    }
-
-    $form['views_container']['ente_planificador_user_display_views'] = array(
-      '#type'  => 'select',
-      '#required'  =>TRUE,
-      '#title'  => t('selected the type of view.'),
-      '#default_value'  => variable_get('ente_planificador_user_display_views', 'page'),//call the value of form for system_settings_form 
-      '#options'  => $options_display,
-      '#description'  => t('List of available types of views'),
-    );
-  }
-  $form = system_settings_form($form);//autosave information of the form.
-  return $form;
 }
 
 /**
