@@ -1,0 +1,1915 @@
+<?php
+
+function _sipp_pdf_pdf_init() {
+  ob_start();
+  error_reporting(E_ALL & ~E_NOTICE);
+  ini_set('display_errors', 0);
+  ini_set('log_errors', 1);
+
+  $author = variable_get('site_name', '');
+  module_load_include('module', 'libraries', 'libraries');
+  $path = libraries_get_path('tcpdf');
+
+
+  if (($path) && (file_exists($path . '/config/lang/spa.php'))) {
+    require_once($path . '/config/lang/spa.php');
+  }
+  else {
+    drupal_set_message(t('TCPDF library not found!'), 'error');
+    return FALSE;
+  }
+
+  if (($path) && (file_exists($path . '/tcpdf.php'))) {
+    require_once($path . '/tcpdf.php');
+  }
+  else {
+    drupal_set_message(t('TCPDF library not found!'), 'error');
+    return FALSE;
+  }
+  // create new PDF documentsite_slogan
+  $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+  // set document information
+  $pdf->SetCreator($author);
+  $pdf->SetAuthor($author);
+  // set default header data
+  $pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
+  // set header and footer fonts
+  $pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+  $pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+  // set default monospaced font
+  $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+  //set margins
+  $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
+  $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+  $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+  //set auto page breaks
+  $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+  //set image scale factor
+  $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+  //set some language-dependent strings
+  $pdf->setLanguageArray($l);
+  // ---------------------------------------------------------
+  // set font
+  $font_size = variable_get('sipp_pdf_font_size', 8);
+  $pdf->SetFont('dejavusans', '', $font_size);
+  // add a page
+  $pdf->AddPage();
+  return $pdf;
+}
+
+/**
+ *
+ */
+function _encabezado_proyecto_pdf($proyecto, $ente_planificador){
+  $output = '';
+  $output .= '<h2>' . t('Resumen del Proyecto') . '</h2>';
+  $output .= '<p><b>' . t('Código Único del Proyecto') . ':</b> ' . check_plain($proyecto->title) . '</p>';
+  $output .= '<p><b>' . t('Nombre del Proyecto') . ':</b> ' . check_plain($proyecto->field_proyecto_titulo[0]['value']) . '</p>';
+  $output .= '<p><b>' . t('Organismo') . ':</b> ' . $ente_planificador->title . '</p>';
+  return $output;
+}
+
+
+/*
+ * Implementation of hook_proyecto_obtiene_links_alter()
+ */
+function sipp_pdf_proyecto_obtiene_links_alter(&$links, $proyecto, $acceso = FALSE) {
+  /*
+  $node_accion = node_load($proyecto->nid);
+  if(_sipp_pdf_ver_datos_wk_access($node_accion)){
+    $links[] = array(
+      'data' => l(t('Obtener Campos del Proyecto en PDF'), 'proyectosop/' . $proyecto->nid . '/pdf'),
+      'class' => 'proyectos-operativos-ver-pdf', 
+    );
+  }
+  if(_proyectos_operativos_ver_datos_wk_access($node_accion)){
+    $links[] = array(
+      'data' => l(t('Obtener Acciones Específicas del Proyecto en PDF'), 'proyectosop/' . $proyecto->nid . '/ae/pdf'),
+      'class' => 'proyectos-operativos-ver-ae-pdf', 
+    );
+    $links[] = array(
+      'data' => l(t('Obtener Datos Financieros del Proyecto en PDF'), 'proyectosop/' . $proyecto->nid . '/finacieros/pdf'),
+      'class' => 'proyectos-operativos-ver-datos-financieros-pdf', 
+    );
+  }
+  if(_proyectos_reformulacion_reformula_node_tab_access($node_accion)){
+    $links[] = array(
+      'data' => l(t('Obtener Reformulaciones del Proyecto en PDF'), 'proyectosop/' . $proyecto->nid . '/reformular/pdf'),
+      'class' => 'proyectos-operativos-reformulaciones-pdf', 
+    );
+  }
+  */
+}
+
+/*
+ * Implementation of hook_proyecto_accion_obtiene_links_alter()
+ */
+function sipp_pdf_proyecto_accion_obtiene_links_alter(&$links, $proyecto, $accion, $acceso = FALSE) {
+
+  if(_proyectos_operativos_ver_datos_wk_access($proyecto)){
+    $links[] = array(
+      'data' => l(t('Obtener Acción específica en PDF'), 'proyectosop/' . $proyecto->nid . '/ae/' . $accion->nid . '/pdf'),
+      'class' => 'proyectos-operativos-acciones_especificas-pdf', 
+    );
+  }
+}
+/*
+ * Implementation of hook_proyecto_accion_obtiene_links_alter()
+ *
+function sipp_pdf_proyecto_reformula_obtiene_links_alter(&$links, $proyecto, $reformular, $acceso = FALSE) {
+
+  if(_proyectos_reformulacion_reformula_node_tab_access($proyecto)){
+    $links[] = array(
+      'data' => l(t('Obtener Reformulación en PDF'), 'proyectosop/' . $proyecto->nid . '/reformular/' . $reformular->id_ref . '/pdf'),
+      'class' => 'proyectos-operativos-ver-reformulacion-pdf', 
+    );
+  }
+}
+
+/*
+ * Implementation of hook_proyecto_accion_obtiene_links_alter()
+ *
+function sipp_pdf_proyecto_reformula_accion_obtiene_links_alter(&$links, $proyecto, $reformular, $accion, $acceso = FALSE) {
+
+  if(_proyectos_reformulacion_reformula_node_tab_access($proyecto, $reformular)){
+    $links[] = array(
+      'data' => l(t('Obtener Reformulación de la Acción Específica en PDF'), 'proyectosop/' . $proyecto->nid . '/reformular/' . $reformular->id_ref . '/ae/' . $accion->nid . '/pdf'),
+      'class' => 'proyectos-operativos-ver-reformulacion-accion-pdf', 
+    );
+  }
+}
+*/
+
+/**
+ * Implementation of hook_theme().accioncent_ver_pdfaccioncent_seguimiento_pdf
+*/
+function sipp_pdf_theme() {
+  $sipp_pdf_path = drupal_get_path('module', 'sipp_pdf') . '/templates';
+  return array(
+    'accioncent_ver_pdf' => array(
+      'arguments' => array(
+        'accion' => array(),
+      ),
+      'template' => 'accioncent-ver-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    /*'accioncent_reformulaciones_pdf' => array(
+      'arguments' => array(
+        'accion' => array(),
+      ),
+      'template' => 'accioncent-reformulaciones-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    'accioncent_reformulaciones_ver_pdf' => array(
+      'arguments' => array(
+        'accion' => array(),
+        'reformulacion_load' => array(),
+      ),
+      'template' => 'accioncent-reformulaciones-ver-pdf',
+      'path' => $sipp_pdf_path,
+    ),*
+    'accioncent_seguimiento_pdf' => array(
+      'arguments' => array(
+        'accion' => array(),
+      ),
+      'template' => 'accioncent-seguimiento-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    'accioncent_seguimiento_ver_campos_pdf' => array(
+      'arguments' => array(
+        'accion' => array(),
+        'campo' => '',
+        'mes' => 0,
+      ),
+      'template' => 'accioncent-seguimiento-ver-campos-pdf',
+      'path' => $sipp_pdf_path,
+    ),*/
+    'proyecto_campos_ver_pdf' => array(
+      'arguments' => array(
+        'proyecto' => array(),
+        'campos' => array(),
+      ),
+      'template' => 'proyecto-campos-ver-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    'proyectos_operativos_datos_ae_list_pdf' => array(
+      'arguments' => array(
+        'proyecto' => array(),
+      ),
+      'template' => 'proyectos-operativos-datos-ae-list-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    'proyectos_operativos_datos_financieros_pdf' => array(
+      'arguments' => array(
+        'proyecto' => array(),
+      ),
+      'template' => 'proyectos-operativos-datos-financieros-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    /*'proyectos_reformulacion_reformula_obtiene_list_pdf' => array(
+      'arguments' => array(
+        'proyecto' => array(),
+      ),
+      'template' => 'proyecto-reformulacion-lista-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    'proyectos_reformulacion_reformula_tab_page_pdf' => array(
+      'arguments' => array(
+        'proyecto' => array(),
+        'reformulacion_load' => array(),
+        'id_ref' => 0,
+        'reformula' => array(),
+        'variaciones' => array(),
+      ),
+      'template' => 'proyectos-ver-reformulacion-pdf',
+      'path' => $sipp_pdf_path,
+    ),
+    'proyectos_reformulacion_reformula_tab_ae_page_pdf' => array(
+      'arguments' => array(
+        'proyecto' => array(),
+        'reformulacion_load' => array(),
+        'ae' => array(),
+        'id_ref' => 0,
+        'reformula' => array(),
+        'variaciones' => array(),
+      ),
+      'template' => 'proyectos-ver-reformulacion-ae-pdf',
+      'path' => $sipp_pdf_path,
+    ),*/
+  );
+}
+
+function _sipp_pdf_ver_datos_wk_access($node) {
+  return (isset($_SESSION['proyectos_operativos_mostrar_campos']) && count($_SESSION['proyectos_operativos_mostrar_campos']) && _proyectos_operativos_ver_datos_wk_access($node));
+}
+
+function _acciones_centralizadas_verpdf($node) {
+  return ($node->type == 'accion_centralizada' && (user_access('ver planificador') || user_access('admin planificador')));
+}
+
+
+
+
+
+/*
+ * Implementation of hook_menu()
+ */
+function sipp_pdf_menu() {
+  $items = array();
+  /*
+  if (module_exists('acciones_centralizadas')) {
+    //Acciones centralizadas
+    $items['node/%node/pdf'] = array(
+      'title' => 'Ver en pdf',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_acciones_centralizadas_verpdf',
+      'access arguments' => array(1),
+      'page callback' => '_sipp_pdf_accionesp_ver_pdf',
+      'page arguments' => array(1),
+      'weight' => 2,
+    );
+    $items['node/%node/reformular/pdf'] = array(
+      'title' => 'Reformulaciones PDF',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_acciones_centralizadas_reformula_node_tab_access',
+      'access arguments' => array(1),
+      'page callback' => '_sipp_pdf_reformulaciones_accioncent',
+      'page arguments' => array(1),
+      'weight' => 2,
+    );
+    $items['node/%node/reformular/%acciones_centralizadas_menu_reformulacion/pdf'] = array(
+      'title' => 'AC PDF',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_acciones_centralizadas_reformula_node_tab_access',
+      'access arguments' => array(1),
+      'page callback' => '_sipp_pdf_reformulaciones_accioncent_ver',
+      'page arguments' => array(1, 3),
+      'weight' => 3,
+    );
+  }
+  if (module_exists('proyecto_operativo_seguimiento')) {
+    $items['node/%node/seguimiento/list'] = array(
+      'title' =>  t('Seguimiento'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10
+    );
+  }
+  if (module_exists('acciones_centralizadas')) {
+    $items['node/%node/seguimiento/pdf'] = array(
+      'title' => 'Seguimientos PDF',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_acciones_centralizadas_seguimiento_node_tab_access',
+      'access arguments' => array(1),
+      'page callback' => '_sipp_pdf_seguimiento_accioncent',
+      'page arguments' => array(1),
+      'weight' => 2,
+    );
+    $items['node/%node/seguimiento/%acciones_centralizadas_menu_campo/%acciones_centralizadas_menu_mes/pdf'] = array(
+      'title' => 'Seguimiento Mes PDF',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_acciones_centralizadas_seguimiento_node_tab_access',
+      'access arguments' => array(1),
+      'page callback' => '_sipp_pdf_seguimiento_ver_campos_accioncent',
+      'page arguments' => array(1, 3, 4),
+      'weight' => 2,
+    );
+  }*/
+  //proyectos operativos
+  $items['proyectosop/%proyectosop/pdf'] = array(
+    'title' => t('Ver en PDF'),
+    'page callback' => '_sipp_pdf_proyecto_campos_pdf',
+    'page arguments' => array(1),
+    'access callback' => '_sipp_pdf_ver_datos_wk_access',
+    'access arguments' => array(1),
+    'weight' => -7,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['proyectosop/%proyectosop/ae/%accion_especifical/pdf'] = array(
+    'title' => t('Ver AE en PDF'),
+    'page callback' => '_sipp_pdf_datosaeview',
+    'page arguments' => array(3),
+    'access callback' => '_proyectos_operativos_ver_datos_wk_access',
+    'access arguments' => array(1),
+    'weight' => -4,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['proyectosop/%proyectosop/ae/ver'] = array(
+    'title' =>  t('AES'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10
+  );
+
+  $items['proyectosop/%proyectosop/ae/pdf'] = array(
+    'title' => t('AE PDF'),
+    'page callback' => '_sipp_pdf_datosaelist',
+    'page arguments' => array(1),
+    'access callback' => '_proyectos_operativos_ver_datos_wk_access',
+    'access arguments' => array(1),
+    'weight' => -5,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['proyectosop/%proyectosop/ficha/ver'] = array(
+    'title' =>  t('Ficha del Proyecto'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10
+  );
+  $items['proyectosop/%proyectosop/ficha/pdf'] = array(
+    'title' => t('Proyecto en PDF'),
+    'page callback' => '_sipp_pdf_datosfichaview',
+    'page arguments' => array(1),
+    'access callback' => '_proyectos_operativos_ver_datos_wk_access',
+    'access arguments' => array(1),
+    'weight' => -4,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['proyectosop/%proyectosop/finacieros/ver'] = array(
+    'title' =>  t('Datos Financieros'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10
+  );
+  //consulta proyecto operativo (datos financieros)
+  $items['proyectosop/%proyectosop/finacieros/pdf'] = array(
+    'title' => t('Datos Financieros PDF'),
+    'page callback' => '_sipp_pdf_datosfinancierosview',
+    'page arguments' => array(1),
+    'access callback' => '_proyectos_operativos_ver_datos_wk_access',
+    'access arguments' => array(1),
+    'weight' => -4,
+    'type' => MENU_LOCAL_TASK,
+  );
+  /*
+  if (module_exists('proyectos_reformulacion')) {
+    $items['proyectosop/%proyectosop/reformular/%proyectosop_menu_reformulacion/ae/%accionesp_menu_r/pdf'] = array(
+      'title' => 'AEs PDF',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_proyectos_reformulacion_reformula_node_tab_access',
+      'access arguments' => array(1, 3),
+      'page callback' => '_sipp_pdf_aeview',
+      'page arguments' => array(1, 3, 5),
+      'weight' => 3,
+    );
+    $items['proyectosop/%proyectosop/reformular/%proyectosop_menu_reformulacion/pdf'] = array(
+      'title' => 'Reformulación PDF',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_proyectos_reformulacion_reformula_node_tab_access',
+      'access arguments' => array(1),
+      'page callback' => '_sipp_pdf_reformulaview',
+      'page arguments' => array(1, 3),
+      'weight' => 2,
+    );
+    $items['proyectosop/%proyectosop/reformular/pdf'] = array(
+      'title' => 'Reformulaciones PDF',
+      'type' => MENU_LOCAL_TASK,
+      'access callback' => '_proyectos_reformulacion_reformula_node_tab_access',
+      'access arguments' => array(1),
+      'page callback' => '_proyectos_reformulacion_reformula_list_pdf',
+      'page arguments' => array(1),
+      'weight' => 2,
+    );
+  }
+  */
+  return $items;
+}
+
+/*
+function _sipp_pdf_reformulaciones_accioncent($node) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = theme('accioncent_reformulaciones_pdf', $node);
+  if ($pdf) {
+    $title = t('Acciones Centralizada');
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'acciones_centralizada_' . $node->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+
+function template_preprocess_accioncent_reformulaciones_pdf(&$variables) {
+  $accion = $variables['accion'];
+  $ente_planificador = node_load($accion->field_acciones_ente[0]['nid']);
+  $variables['ente_planificador'] = $ente_planificador;
+  $variables['states'] = _acciones_centralizadas_reformula_obtiene_estados();
+
+  $first_state = 0;
+  if ($states['wid']) {
+    $first_state = _workflow_creation_state($states['wid']);
+  }
+  $variables['first_state'] = $first_state;
+  $estado_naprobado = variable_get('acciones_centralizadas_state_naprobado', NULL);
+  $result = db_query('SELECT re.*, u.name, u.uid FROM {accion_reformular} re INNER JOIN {users} u ON u.uid = re.uid WHERE nid = %d AND estado <> %d ORDER BY id_ref DESC', $accion->nid, $estado_naprobado);
+  $reformulaciones = array();
+  while($reformular = db_fetch_object($result)) {
+    $reformulaciones[$reformular->id_ref] = $reformular;
+  }
+  $variables['reformulaciones'] = $reformulaciones;
+}
+
+
+function _sipp_pdf_reformulaciones_accioncent_ver($node, $reformulacion_load) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = theme('accioncent_reformulaciones_ver_pdf', $node, $reformulacion_load);
+  if ($pdf) {
+    $title = t('Acción Centralizada');
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'acciones_centralizada_' . $node->nid . '_reformulacion.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+
+function template_preprocess_accioncent_reformulaciones_ver_pdf(&$variables) {
+  $accion = $variables['accion'];
+  $ente_planificador = node_load($accion->field_acciones_ente[0]['nid']);
+  $variables['ente_planificador'] = $ente_planificador;
+  $reformulacion_load = $variables['reformulacion_load'];
+  $ente_planificador = node_load($accion->field_acciones_ente[0]['nid']);
+  $id_ref = $reformulacion_load ? $reformulacion_load->id_ref : 0;
+  $reformula = _acciones_centralizadas_reformula_load($accion, $id_ref);
+  $variaciones = _acciones_centralizadas_reformula_all_partidas_load($accion, $id_ref);
+  $variables['id_ref'] = $id_ref;
+  $variables['reformula'] = $reformula;
+  $variables['variaciones'] = $variaciones;
+  $grupos = fieldgroup_groups('accion_centralizada');
+  $grupos_form = array();
+  $grupos_fields = array();
+  foreach($grupos as $id => $grupo) {
+    if (count($grupo['fields'])) {
+      foreach($grupo['fields'] as $id_field => $field) {
+        $grupos_fields[$id_field] = $id;
+      }
+    }
+  }
+  $variables['grupos'] = $grupos;
+  $variables['grupos_fields'] = $grupos_fields;
+  $campos = array(
+    'field_ac_ac1_ae1',
+    'field_ac_ac1_ae2',
+    'field_ac_ac2_ae2',
+    'field_ac_ac2_ae3',
+    'field_ac_ac3_ae1',
+    'field_ac_ac4_ae1',
+  );
+  $variables['campos'] = $campos;
+  $ftypes = array(
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $variables['ftypes'] = $ftypes;
+  $valores = array();
+  foreach($ftypes as $id_field => $texto) {
+    $valores[$id_field] = 0;
+
+  }
+  $partidas_nodo = array();
+  foreach ($campos as $id) {
+    if (count($accion->{$id})) {
+      foreach($accion->{$id} as $partida) {
+        if(!empty($partida['tid'])) {
+          $partidas_nodo[$id][$partida['tid']] = $partida['tid'];
+        }
+      }
+    }
+  }
+  if (count($variaciones)) {
+    foreach($variaciones as $field_l => $partidas) {
+      if (count($partidas)) {
+        foreach($partidas as $tid => $partida) {
+          if (!isset($partidas_nodo[$field_l][$tid])) {
+            $valores['tid'] = $tid;
+            $accion->{$field_l}[] = $valores;
+            $partidas_nodo[$field_l][$tid] = $tid;
+          }
+        }
+      }
+    }
+  }
+  if (count($reformula)) {
+    foreach($reformula as $field_l => $partidas) {
+      if (count($partidas)) {
+        foreach($partidas as $tid => $partida) {
+          if (!isset($partidas_nodo[$field_l][$tid])) {
+            $valores['tid'] = $tid;
+            $accion->{$field_l}[] = $valores;
+            $partidas_nodo[$field_l][$tid] = $tid;
+          }
+        }
+      }
+    }
+  }
+  $fields_title = array();
+  foreach ($campos as $id) {
+    $field_load = content_fields($id, 'accion_centralizada');
+    $fields_title[$id] = $field_load['widget']['label'];
+  }
+  $variables['fields_title'] = $fields_title;
+  $variables['accion'] = $accion;
+  $historys = array();
+  $states = array();
+  if (module_exists('workflow')) {
+    $states = _acciones_centralizadas_reformula_obtiene_estados();
+    $result = db_query('SELECT re.*, u.name, u.uid FROM {accion_reformular_state} re INNER JOIN {users} u ON u.uid = re.uid WHERE nid = %d AND id_ref = %d ORDER BY date DESC', $accion->nid, $id_ref);
+    while($history = db_fetch_object($result)) {
+      $historys[] = $history;
+    }
+  }
+  $variables['historys'] = $historys;
+  $variables['states'] = $states;
+  $partida_nombre = array();
+  foreach ($campos as $id) {
+    if (count($accion->{$id})) {
+      foreach($accion->{$id} as $partida) {
+        if(!empty($partida['tid'])) {
+          $term = taxonomy_get_term($partida['tid']);
+          $partida_nombre[$partida['tid']] = $term->name;
+        }
+      }
+    }
+  }
+  $variables['partida_nombre'] = $partida_nombre;
+}
+
+
+
+
+function _sipp_pdf_seguimiento_accioncent($node) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = theme('accioncent_seguimiento_pdf', $node);
+  if ($pdf) {
+    $title = t('Acciones Centralizada');
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'acciones_centralizada_' . $node->nid . '_seguimiento.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+
+
+
+function template_preprocess_accioncent_seguimiento_pdf(&$variables) {
+  $accion = $variables['accion'];
+  $ente_planificador = node_load($accion->field_acciones_ente[0]['nid']);
+  $variables['ente_planificador'] = $ente_planificador;
+  $reformulacion_load = $variables['reformulacion_load'];
+  $year = variable_get('acciones_centralizadas_anho_seguimiento', 0);
+  $variables['year'] = $year;
+  $mes_segu = variable_get('acciones_centralizadas_mes_seguimiento', 0);
+  $variables['mes_segu'] = $mes_segu;
+  $output = '';
+  $ftypes = array(
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $variables['ftypes'] = $ftypes;
+  $id_ref = $reformulacion_load ? $reformulacion_load->id_ref : 0;
+  $variaciones = _acciones_centralizadas_reformula_all_partidas_load($accion, $id_ref);
+  $reformula = _acciones_centralizadas_reformula_load($accion);
+  $variables['id_ref'] = $id_ref;
+  $variables['reformula'] = $reformula;
+  $variables['variaciones'] = $variaciones;
+  $actual = array();
+  $meses = array(
+    0 => t('January'),
+    1 => t('February'), 
+    2 => t('March'), 
+    3 => t('April'),
+    4 => t('May'),
+    5 => t('June'),
+    6 => t('July'),
+    7 => t('August'),
+    8 => t('September'),
+    9 => t('Octuber'),
+    10 => t('November'),
+    11 => t('December'),
+  );
+  $variables['meses'] = $meses;
+  $campos = array(
+    'field_ac_ac1_ae1' => 'field_ac_ac1_ae1',
+    'field_ac_ac1_ae2' => 'field_ac_ac1_ae2',
+    'field_ac_ac2_ae2' => 'field_ac_ac2_ae2',
+    'field_ac_ac2_ae3' => 'field_ac_ac2_ae3',
+    'field_ac_ac3_ae1' => 'field_ac_ac3_ae1',
+    'field_ac_ac4_ae1' => 'field_ac_ac4_ae1',
+  );
+  $variables['campos'] = $campos;
+  $valores = array();
+  foreach($ftypes as $id_field => $texto) {
+    $valores[$id_field] = 0;
+
+  }
+  $partidas_nodo = array();
+  $campos_f = array();
+  foreach ($campos as $id) {
+    $field_load = content_fields($id, 'accion_centralizada');
+    $campos_f[$id] = $field_load;
+    if (!$accion->{$id}[0]['tid']) {
+      $accion->{$id} = array();
+    }
+    if (count($accion->{$id})) {
+      foreach($accion->{$id} as $partida) {
+        if(!empty($partida['tid'])) {
+          $partidas_nodo[$id][$partida['tid']] = $partida['tid'];
+        }
+      }
+    }
+  }
+  $variables['campos_f'] = $campos_f;
+  if (count($variaciones)) {
+    foreach($variaciones as $field_l => $partidas) {
+      if (count($partidas)) {
+        foreach($partidas as $tid => $partida) {
+          if (!isset($partidas_nodo[$field_l][$tid])) {
+            if (empty($accion->{$field_l}[0]['tid']) || !$accion->{$field_l}[0]['tid']) {
+              $accion->{$field_l} = array();
+            }
+            $valores['tid'] = $tid;
+            $accion->{$field_l}[] = $valores;
+            $partidas_nodo[$field_l][$tid] = $tid;
+          }
+        }
+      }
+    }
+  }
+  if (count($reformula)) {
+    foreach($reformula as $field_l => $partidas) {
+      if (count($partidas)) {
+        foreach($partidas as $tid => $partida) {
+          if (!isset($partidas_nodo[$field_l][$tid])) {
+            if (empty($accion->{$field_l}[0]['tid']) || !$accion->{$field_l}[0]['tid']) {
+              $accion->{$field_l} = array();
+            }
+            $valores['tid'] = $tid;
+            $accion->{$field_l}[] = $valores;
+            $partidas_nodo[$field_l][$tid] = $tid;
+          }
+        }
+      }
+    }
+  }
+  foreach($meses as $mes => $nombre) {
+    $valor = $mes > 0 ? 'value_' . $mes : 'value';
+    foreach($campos as $ids) {
+      $actualP = _acciones_centralizadas_seguimiento_load($accion, $ids, $mes);
+      $mensajes[$ids][$valor] =  $actualP['values'];
+      if (isset($actualP['comprometido'][$ids])) {
+        foreach($actualP['comprometido'][$ids] as $tid => $value) {
+          $actual['comprometido'][$ids][$tid][$valor] = $value[$valor];
+        }
+        foreach($actualP['pagado'][$ids] as $tid => $value) {
+          $actual['pagado'][$ids][$tid][$valor] = $value[$valor];
+        }
+        foreach($actualP['causado'][$ids] as $tid => $value) {
+          $actual['causado'][$ids][$tid][$valor] = $value[$valor];
+        }
+      }
+    }
+  }
+  $variables['mensajes'] = $mensajes;
+  $variables['actual'] = $actual;
+  $comprometido = isset($actual['comprometido']) ? $actual['comprometido'] : array();
+  $causado = isset($actual['causado']) ? $actual['causado'] : array();
+  $pagado = isset($actual['pagado']) ? $actual['pagado'] : array();
+  $variables['comprometido'] = $comprometido;
+  $variables['causado'] = $causado;
+  $variables['pagado'] = $pagado;
+  $grupos = fieldgroup_groups('accion_centralizada');
+  $variables['grupos'] = $grupos;
+  $colores = array();
+  $colores[0] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_default', 'No hay planificación'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_default', '#FFFFFF'),
+    'color' => variable_get('acciones_centralizadas_color_default', '#633303'),
+  );
+  $colores[1] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_critica', 'Zona crítica'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_critica', '#FFFFFF'),
+    'color' => variable_get('acciones_centralizadas_color_critica', '#fd0002'),
+  );
+  $colores[2] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_discreta', 'Zona discreta'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_discreta', '#FFFFFF'),
+    'color' => variable_get('acciones_centralizadas_color_discreta', '#cc6733'),
+  );
+  $colores[3] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_moderada', 'Zona moderada'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_moderada', '#000000'),
+    'color' => variable_get('acciones_centralizadas_color_moderada', '#fdff00'),
+  );
+  $colores[4] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_optima', 'Zona optima'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_optima', '#000000'),
+    'color' => variable_get('acciones_centralizadas_color_optima', '#20ff21'),
+  );
+  $colores[5] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_sejecucion', 'Sobre ejecución'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_sejecucion', '#000000'),
+    'color' => variable_get('acciones_centralizadas_color_sejecucion', '#9966cd'),
+  );
+  $variables['colores'] = $colores;
+  $variables['accion'] = $accion;
+}
+
+
+function _sipp_pdf_seguimiento_ver_campos_accioncent($node, $campo = '', $mes = 0) {
+  $pdf = _sipp_pdf_pdf_init();
+  $meses = array(
+    0 => t('January'),
+    1 => t('February'), 
+    2 => t('March'), 
+    3 => t('April'),
+    4 => t('May'),
+    5 => t('June'),
+    6 => t('July'),
+    7 => t('August'),
+    8 => t('September'),
+    9 => t('Octuber'),
+    10 => t('November'),
+    11 => t('December'),
+  );
+  $html = theme('accioncent_seguimiento_ver_campos_pdf', $node, $campo, $mes);
+  if ($pdf) {
+    $title = t('Acciones Centralizada para el mes: #mes_load', array('#mes_load' => $meses[$mes]));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'acciones_centralizada_' . $node->nid . '_seguimiento.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+function template_preprocess_accioncent_seguimiento_ver_campos_pdf(&$variables) {
+  $campo = $variables['campo'];
+  $node = $variables['accion'];
+
+  $mes = $variables['mes'];
+  $variables['campo'] = $campo;
+  $ente_planificador = node_load($node->field_acciones_ente[0]['nid']);
+  $variables['ente_planificador'] = $ente_planificador;
+  $year = variable_get('acciones_centralizadas_anho_creacion', 0);
+  $variables['year'] = $year;
+  $meses = array(
+    0 => t('January'),
+    1 => t('February'), 
+    2 => t('March'), 
+    3 => t('April'),
+    4 => t('May'),
+    5 => t('June'),
+    6 => t('July'),
+    7 => t('August'),
+    8 => t('September'),
+    9 => t('Octuber'),
+    10 => t('November'),
+    11 => t('December'),
+  );
+  $ftypes = array(
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $variables['meses'] = $meses;
+  $variables['ftypes'] = $ftypes;
+  $id_ref = 0;
+  $variaciones = _acciones_centralizadas_reformula_all_partidas_load($node, $id_ref);
+  $reformula = _acciones_centralizadas_reformula_load($node);
+  $variables['id_ref'] = $id_ref;
+  $variables['variaciones'] = $variaciones;
+  $variables['reformula'] = $reformula;
+  $campos = array(
+    'field_ac_ac1_ae1',
+    'field_ac_ac1_ae2',
+    'field_ac_ac2_ae2',
+    'field_ac_ac2_ae3',
+    'field_ac_ac3_ae1',
+    'field_ac_ac4_ae1',
+  );
+  $valores = array();
+  foreach($ftypes as $id_field => $texto) {
+    $valores[$id_field] = 0;
+  }
+  $partidas_nodo = array();
+  foreach ($campos as $id) {
+    if (count($node->{$id})) {
+      foreach($node->{$id} as $partida) {
+        if(!empty($partida['tid'])) {
+          $partidas_nodo[$id][$partida['tid']] = $partida['tid'];
+        }
+      }
+    }
+  }
+  if (count($variaciones)) {
+    foreach($variaciones as $field_l => $partidas) {
+      if (count($partidas)) {
+        foreach($partidas as $tid => $partida) {
+          if (!isset($partidas_nodo[$field_l][$tid])) {
+            $valores['tid'] = $tid;
+            $node->{$field_l}[] = $valores;
+            if ($field_l == $campo['field']) {
+              $campo['values'][] = $valores;
+            }
+          }
+        }
+      }
+    }
+  }
+  if (count($reformula)) {
+    foreach($reformula as $field_l => $partidas) {
+      if (count($partidas)) {
+        foreach($partidas as $tid => $partida) {
+          if (!isset($partidas_nodo[$field_l][$tid])) {
+            $valores['tid'] = $tid;
+            $node->{$field_l}[] = $valores;
+            if ($field_l == $campo['field']) {
+              $campo['values'][] = $valores;
+            }
+          }
+        }
+      }
+    }
+  }
+  $actual = _acciones_centralizadas_seguimiento_load($node, $campo['field'], $mes);
+  $comprometido = isset($actual['comprometido']) ? $actual['comprometido'] : array();
+  $causado = isset($actual['causado']) ? $actual['causado'] : array();
+  $pagado = isset($actual['pagado']) ? $actual['pagado'] : array();
+  $variables['actual'] = $actual;
+  $variables['comprometido'] = $comprometido;
+  $variables['causado'] = $causado;
+  $variables['pagado'] = $pagado;
+  $grupos = fieldgroup_groups('accion_centralizada');
+  $variables['grupos'] = $grupos;
+  $field_load = content_fields($campo['field'], 'accion_centralizada');
+  $variables['field_load'] = $field_load;
+  $colores = array();
+  $colores[0] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_default', 'No hay planificación'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_default', '#FFFFFF'),
+    'color' => variable_get('acciones_centralizadas_color_default', '#633303'),
+  );
+  $colores[1] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_critica', 'Zona crítica'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_critica', '#FFFFFF'),
+    'color' => variable_get('acciones_centralizadas_color_critica', '#fd0002'),
+  );
+  $colores[2] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_discreta', 'Zona discreta'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_discreta', '#FFFFFF'),
+    'color' => variable_get('acciones_centralizadas_color_discreta', '#cc6733'),
+  );
+  $colores[3] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_moderada', 'Zona moderada'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_moderada', '#000000'),
+    'color' => variable_get('acciones_centralizadas_color_moderada', '#fdff00'),
+  );
+  $colores[4] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_optima', 'Zona optima'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_optima', '#000000'),
+    'color' => variable_get('acciones_centralizadas_color_optima', '#20ff21'),
+  );
+  $colores[5] = array(
+    'texto' => variable_get('acciones_centralizadas_texto_sejecucion', 'Sobre ejecución'),
+    'tcolor' => variable_get('acciones_centralizadas_colort_sejecucion', '#000000'),
+    'color' => variable_get('acciones_centralizadas_color_sejecucion', '#9966cd'),
+  );
+  $variables['colores'] = $colores;
+  $partidas_nombre = array();
+  foreach ($campo['values'] as $partida) {
+    if ($partida['tid']) {
+      $term = taxonomy_get_term($partida['tid']);
+      // If this term's vocabulary supports localization.
+      if (module_exists('i18ntaxonomy') && i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_LOCALIZE) {
+        $term->name = t("taxonomy:term:$term->tid:name", $term->name);
+      }
+    $partidas_nombre[$partida['tid']] = $term->name;
+    }
+  }
+  $variables['partidas_nombre'] = $partidas_nombre;
+  $variables['accion'] = $node;
+  $variables['campo'] = $campo;
+  $grupos_fields = array();
+  foreach($grupos as $id => $grupo) {
+    if (count($grupo['fields'])) {
+      foreach($grupo['fields'] as $id_field => $field) {
+        if ($id_field == $campo['field']) {
+          $grupos_fields = $grupos[$id];
+        }
+      }
+    }
+  }
+  $variables['grupos_fields'] = $grupos_fields;
+  $historys = array();
+  $states = array();
+  if (module_exists('workflow')) {
+    $cid_seg = isset($actual['values']) && isset($actual['values']['id_seg']) ? $actual['values']['id_seg'] : 0;
+    $states = _acciones_centralizadas_reformula_obtiene_estados();
+    if ($cid_seg) {
+      $result = db_query('SELECT re.*, u.name, u.uid FROM {accion_seguimiento_state} re INNER JOIN {users} u ON u.uid = re.uid WHERE nid = %d AND id_seg = %d ORDER BY date DESC', $node->nid, $cid_seg);
+      while($history = db_fetch_object($result)) {
+        $historys[] = $history;
+      }
+    }
+  }
+  $variables['states'] = $states;
+  $variables['historys'] = $historys;
+  $variables['estado_aprobado'] = variable_get('acciones_centralizadas_state_aprobado', NULL);
+  $variables['estado_naprobado']= variable_get('acciones_centralizadas_state_naprobado', NULL);
+  $variables['current_estado']= isset($actual['values']) && isset($actual['values']['estado']) ? $actual['values']['estado'] : -1;
+  $variables['cid_seg']= isset($actual['values']) && isset($actual['values']['id_seg']) ? $actual['values']['id_seg'] : 0;
+  $variables['grupo'] = explode('-', $grupos_fields['label']);
+}
+
+
+
+function _sipp_pdf_accionesp_ver_pdf($ac) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = theme('accioncent_ver_pdf', $ac);
+  if ($pdf) {
+    $title = t('Acción Centralizada : @ac', array('@proyecto' => check_plain($ac->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'accion_centralizada_' . $ac->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+*/
+
+
+function _sipp_pdf_proyecto_campos_pdf($node) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = '<style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    tbody {
+      border-top: 1px solid #ccc;
+    }
+    tr td, tr th {
+      border: 1px solid #000000;
+      padding: 0 5em;
+   }
+   th {
+     text-align: left;
+     border: 1px solid #000000;
+   }
+  </style>';
+  $html .= theme('proyecto_campos_ver_pdf', $node, $_SESSION[$node->nid]['proyectos_operativos_mostrar_campos']);
+  if ($pdf) {
+    $title = t('Proyecto Operativo : @title', array('@title' => check_plain($node->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'proyecto_operativo_' . $node->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+function _sipp_pdf_datosfichaview($node) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = '<style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    tbody {
+      border-top: 1px solid #ccc;
+    }
+    tr td, tr th {
+      border: 1px solid #000000;
+      padding: 0 5em;
+    }
+    th {
+      text-align: left;
+      border: 1px solid #000000;
+    }
+    div {
+      line-height: 0;
+    }
+    h2.title {
+      line-height: 5px;
+    }
+    div.field-field-accion-esp-fechai + div.field-label {
+      line-height: 7px;
+    }
+    div.field-field-accion-esp-fechaf + div.field-label {
+      line-height: 7px;
+    }
+    div.field-field-accion-esp-ejecutor + div.field-label {
+      line-height: 1em;
+    }
+    div.field-field-accion-esp-ejecutor + div.field-items + div.odd {
+      line-height: 1px;
+    }
+    div.field-field-accion-esp-bien + div.field-label {
+      line-height: 1em;
+    }
+    div.field-field-accion-esp-bien + div.field-items + div.odd {
+      line-height: 3.7px;
+    }
+    div.field-label {
+      line-height: 7px;
+    }
+    div.field + div.field-label {
+      line-height: 7px;
+    }
+    div.field-field-accion-esp-metaf + table {
+      line-height: 5px;
+      padding: 6px;
+    }
+    div.uno {
+      line-height: 10px;
+    }
+    div.dos {
+      line-height: 10px;
+    }
+    div.cinco {
+      line-height: 0.8em;
+      background-color: #fff;
+    }
+    div.seis {
+      line-height: 10px;
+    }
+    div.siete {
+      line-height: 15px;
+    }
+
+
+  </style>';
+  $html .= theme('proyectos_operativos_mcti_ficha_proyecto', $node);
+  if ($pdf) {
+    $title = t('Ficha del Proyecto Operativo : @title', array('@title' => check_plain($node->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'ficha_proyecto_operativo_' . $node->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+
+function _sipp_pdf_datosaeview($ae) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = '<style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    tbody {
+      border-top: 1px solid #ccc;
+    }
+    tr td, tr th {
+      border: 1px solid #000000;
+      padding: 0 5em;
+   }
+   th {
+     text-align: left;
+     border: 1px solid #000000;
+   }
+   div {
+    line-height: 4px; 
+   }
+  </style>';
+  $html .= node_view($ae);
+  if ($pdf) {
+    $title = t('Acción Específica : @ae', array('@proyecto' => check_plain($ae->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'accion_especifica_' . $ae->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+function _sipp_pdf_datosaelist($node) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = '<style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    tbody {
+      border-top: 1px solid #ccc;
+    }
+    tr td, tr th {
+      border: 1px solid #000000;
+      padding: 0 5em;
+   }
+   th {
+     text-align: left;
+     border: 1px solid #000000;
+   }
+  </style>';
+  $html .= theme('proyectos_operativos_datos_ae_list_pdf', $node);
+  if ($pdf) {
+    $title = t('Acciones Específicas del Proyecto: @proyecto', array('@proyecto' => check_plain($node->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'acciones_especificas_' . $node->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+function template_preprocess_proyectos_operativos_datos_ae_list_pdf(&$variables) {
+  $proyecto = $variables['proyecto'];
+  $acciones_especificas = array();
+  foreach($proyecto->field_proyecto_accion_esp as $accion) {
+    if ($accion['nid'] && $nid != $accion['nid']) {
+      $accion_load = node_load($accion['nid']);
+      if ($accion_load && $accion_load->type == 'accion_especifica') {
+        $acciones_especificas[$accion_load->nid] = $accion_load;
+        $ejecucion += $accion_load->field_accion_esp_ponderacion[0]['value'];
+      }
+    }
+    elseif($nid = $accion['nid']) {
+      $acciones_especificas[$ae->nid] = $ae;
+    }
+  }
+  $variables['acciones_especificas'] = $acciones_especificas;
+  $ente_planificador = node_load($proyecto->field_proyecto_ente[0]['nid']);
+  $variables['ente_planificador'] = $ente_planificador;
+}
+
+
+function _sipp_pdf_datosfinancierosview($node) {
+  ob_end_clean();
+  $html = '<style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    tbody {
+      border-top: 1px solid #ccc;
+    }
+    tr td, tr th {
+      border: 1px solid #000000;
+      padding: 0 5em;
+   }
+   th {
+     text-align: left;
+     border: 1px solid #000000;
+   }
+  </style>';
+  //$html .= '<link rel="stylesheet" href="' . path_to_theme() . '/style.css' . '">';
+  $ente_planificador = node_load($node->field_proyecto_ente[0]['nid']);
+  $html .= '<h1 style="text-align:center;">DATOS FINANCIEROS</h1>';
+
+  $pdf = _sipp_pdf_pdf_init();
+  //  $html = theme('proyectos_operativos_datos_financieros_pdf', $node);
+  $html .= _proyectos_operativos_proyecto_financieros($node);
+  if ($pdf) {
+    $title = t('Datos Financieros del Proyecto: @proyecto', array('@proyecto' => check_plain($node->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'datosfinancieros_' . $node->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    ob_end_clean();
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+function template_preprocess_proyectos_operativos_datos_financieros_pdf(&$variables) {
+  global $user;
+  $proyecto = $variables['proyecto'];
+  $ejecucion = 0;
+  $acciones_especificas = array();
+  $arreglo_anual = array();
+  $arreglo_partida = array();
+  $titles = array();
+  $partidas = array();
+  $node_type = content_types('accion_especifica');
+  $fields = $node_type['fields'];
+  $title = array();
+  $title['ordinarios'] = t('Recursos Ordinarios');
+  $fields_financiamiento = array();
+  $fields_financiamiento['ordinarios'] = array();
+  $titulos_campos = array();
+  $valores = array();
+  $campos = array();
+  $arreglo = array(
+    'field_accion_esp_transferencias' => 'field_accion_esp_transferencias',
+    'field_accion_esp_creditosa' => 'field_accion_esp_creditosa',
+    'field_accion_esp_mcti' => 'field_accion_esp_mcti',
+  );
+  if (is_array($fields) && count($fields)) {
+    foreach($fields as $field_id => $field) {
+      if (array_key_exists($field_id, $arreglo)) {
+        $fields_financiamiento['ordinarios'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+      elseif (variable_get('proyectos_operativos_ac_fo_' . $field_id, FALSE)) {
+        $fields_financiamiento['ordinarios'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+    }
+  }
+  $title['propios'] = t('Recursos Propios');
+  $fields_financiamiento['propios'] = array();
+  $arreglo = array(
+    'field_accion_esp_venta_act' => 'field_accion_esp_venta_act',
+    'field_accion_esp_activos' => 'field_accion_esp_activos',
+    'field_accion_esp_flujocaja' => 'field_accion_esp_flujocaja',
+    'field_accion_esp_ventapro' => 'field_accion_esp_ventapro',
+  );
+  if (is_array($fields) && count($fields)) {
+    foreach($fields as $field_id => $field) {
+      if (array_key_exists($field_id, $arreglo)) {
+        $fields_financiamiento['propios'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+      elseif (variable_get('proyectos_operativos_ac_fp_' . $field_id, FALSE)) {
+        $fields_financiamiento['propios'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+    }
+  }
+  $title['transferencias'] = t('Transferencias');
+  $fields_financiamiento['transferencias'] = array();
+  $arreglo = array(
+    'field_accion_esp_donaciones' => 'field_accion_esp_donaciones',
+  );
+  if (is_array($fields) && count($fields)) {
+    foreach($fields as $field_id => $field) {
+      if (array_key_exists($field_id, $arreglo)) {
+        $fields_financiamiento['transferencias'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+      elseif (variable_get('proyectos_operativos_ac_fd_' . $field_id, FALSE)) {
+        $fields_financiamiento['transferencias'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+    }
+  }
+  $title['otros'] = t('Otros');
+  $fields_financiamiento['otros'] = array();
+  $arreglo = array(
+    'field_accion_esp_gobernacion' => 'field_accion_esp_gobernacion',
+    'field_accion_esp_misionc' => 'field_accion_esp_misionc',
+    'field_accion_esp_bid_fona' => 'field_accion_esp_bid_fona',
+    'field_accion_esp_fonacit' => 'field_accion_esp_fonacit',
+    'field_accion_esp_fonden' => 'field_accion_esp_fonden',
+    'field_accion_esp_locti' => 'field_accion_esp_locti',
+    'field_accion_esp_fondoidi' => 'field_accion_esp_fondoidi',
+    'field_accion_esp_capitalrie' => 'field_accion_esp_capitalrie',
+    'field_accion_esp_infocentro' => 'field_accion_esp_infocentro',
+    'field_accion_esp_fidetel' => 'field_accion_esp_fidetel',
+  );
+  if (is_array($fields) && count($fields)) {
+    foreach($fields as $field_id => $field) {
+      if (array_key_exists($field_id, $arreglo)) {
+        $fields_financiamiento['otros'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+      elseif (variable_get('proyectos_operativos_ac_fo_' . $field_id, FALSE)) {
+        $fields_financiamiento['otros'][] = $field_id;
+        $valores[$field_id] = 0;
+        $campos[] = $field_id;
+        $titulos_campos[$field_id] = $field['widget']['label'];
+      }
+    }
+  }
+  $variables['fields_financiamiento'] = $fields_financiamiento;
+  $variables['campos'] = $campos;
+  $variables['titulos_campos'] = $titulos_campos;
+  foreach($proyecto->field_proyecto_accion_esp as $accion) {
+    if ($accion['nid']) {
+      $accion_load = node_load($accion['nid']);
+      if ($accion_load && $accion_load->type == 'accion_especifica') {
+        foreach($campos as $field) {
+          $valores[$field] += $accion_load->{$field}[0]['value'];
+        }
+        $titles[$accion_load->nid] = $accion_load->title;
+        $acciones_especificas[$accion_load->nid] = $accion_load;
+        $ejecucion += $accion_load->field_accion_esp_ponderacion[0]['value'];
+        foreach($accion_load->field_accion_esp_programacion as $accion) {
+          if ($accion['tid']) {
+            $partidas[$accion['tid']] = $accion['tid'];
+            for ($i = 0; $i < 12; $i++) {
+              $valor = $i ? 'value_' . $i : 'value';
+              if (!isset($arreglo_partida[$accion_load->nid][$accion['tid']])) {
+                $arreglo_partida[$accion_load->nid][$accion['tid']] = 0;
+              }
+              if (!isset($arreglo_anual[$accion_load->nid][$valor])) {
+                $arreglo_anual[$accion_load->nid][$valor] = 0;
+              }
+              $arreglo_partida[$accion_load->nid][$accion['tid']] += $accion[$valor];
+              $arreglo_anual[$accion_load->nid][$valor] += $accion[$valor];
+            }
+          }
+        }
+      }
+    }
+  }
+  $variables['valores'] = $valores;
+  $variables['arreglo_anual'] = $arreglo_anual;
+  $variables['arreglo_partida'] = $arreglo_partida;
+  $variables['partidas'] = $partidas;
+  $variables['titles'] = $titles;
+  $ftypes = array(
+    'value' => t('ENE'),
+    'value_1' => t('FEB'), 
+    'value_2' => t('MAR'), 
+    'value_3' => t('ABR'),
+    'value_4' => t('MAY'),
+    'value_5' => t('JUN'),
+    'value_6' => t('JUL'),
+    'value_7' => t('AGO'),
+    'value_8' => t('SEP'),
+    'value_9' => t('OCT'),
+    'value_10' => t('NOV'),
+    'value_11' => t('DEC'),
+  );
+  $variables['ftypes'] = $ftypes;
+
+  $partidas_nombres = array();
+  foreach($partidas as $valor) {
+    $term = taxonomy_get_term($valor);
+    // If this term's vocabulary supports localization.
+    if (module_exists('i18ntaxonomy') && i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_LOCALIZE) {
+      $term->name = tt("taxonomy:term:$term->tid:name", $term->name);
+    }
+    $partidas_nombres[$valor] = $term->name;
+  }
+  $variables['partidas_nombres'] = $partidas_nombres;
+}
+
+/*
+function _proyectos_reformulacion_reformula_list_pdf($node) {
+  $pdf = _sipp_pdf_pdf_init();
+  $html = theme('proyectos_reformulacion_reformula_obtiene_list_pdf', $node);
+  if ($pdf) {
+    $title = t('Reformulaciones Proyecto: @proyecto', array('@proyecto' => check_plain($node->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'reformulaciones_' . $node->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+*/
+
+/*
+ * Implementation of _proyectos_reformulacion_reformula_obtiene_list_page()
+ 
+function template_preprocess_proyectos_reformulacion_reformula_obtiene_list_pdf(&$variables) {
+  global $user;
+  $node = $variables['proyecto']; 
+  $ente_planificador = node_load($node->field_proyecto_ente[0]['nid']);
+  $states = _proyectos_operativos_reformulacion_obtiene_estados();
+
+  $estado_naprobado = variable_get('proyectos_operativos_state_naprobado', NULL);
+  $result = db_query('SELECT re.*, u.name, u.uid FROM {proyectos_reformular} re INNER JOIN {users} u ON u.uid = re.uid WHERE nid = %d AND estado <> %d ORDER BY id_ref DESC', $node->nid, $estado_naprobado);
+  while($reformular = db_fetch_object($result)) {
+    $reformulaciones[] = $reformular;
+  }
+  $variables['reformulaciones'] = $reformulaciones;
+  $variables['states'] = $states;
+  $variables['ente_planificador'] = $ente_planificador;
+}
+
+function _sipp_pdf_reformulaview($node, $reformulacion_load = 0) {
+  $pdf = _sipp_pdf_pdf_init();
+  $id_ref = $reformulacion_load ? $reformulacion_load->id_ref : 0;
+  $reformula = _proyectos_reformulacion_load($node, $id_ref);
+  $variaciones = _proyectos_reformula_all_partidas_load($node, $id_ref);
+  $html = theme('proyectos_reformulacion_reformula_tab_page_pdf', $node, $reformulacion_load, $id_ref, $reformula, $variaciones);
+  if ($pdf) {
+    $title = t('Reformulación Proyecto: @proyecto (@date)', array('@date' => format_date($reformulacion_load->date), '@proyecto' => check_plain($node->title)));
+    $pdf->SetTitle($title);
+    $pdf->SetSubject($title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'reformulacion_' . $reformulacion_load->id_ref . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output($name, 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+function template_preprocess_proyectos_reformulacion_reformula_tab_page_pdf(&$variables) {
+  global $user;
+  $node = $variables['proyecto'];
+  $id_ref = $variables['id_ref'];
+  $reformula = $variables['reformula'];
+  $variaciones = $variables['variaciones'];
+  $ente_planificador = node_load($node->field_proyecto_ente[0]['nid']);
+  $variables['ente_planificador'] = $ente_planificador;
+  $field = content_fields('field_accion_esp_unidadm', 'accion_especifica');
+  $unidadesm = array();
+  $tree = taxonomy_get_tree($field['vid']);
+  if ($tree) {
+    foreach ($tree as $term) {
+      $unidadesm[$term->tid] = $term->name;
+    }
+  }
+  $variables['unidadesm'] = $unidadesm;
+  $grupos = array();
+  if ($node->field_proyecto_accion_esp[0]['nid']) {
+    foreach($node->field_proyecto_accion_esp as $ae) {
+      $grupos[$ae['nid']] = node_load($ae['nid']);
+    }
+  }
+  $variables['grupos'] = $grupos;
+  //get first state
+  $estados = array();
+  if (module_exists('workflow')) {
+    $estados = _proyectos_operativos_reformulacion_obtiene_estados();
+  }
+  $variables['estados'] = $estados;
+  $ftypes = array(
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $variables['ftypes'] = $ftypes;
+  $historys = array();
+  if (module_exists('workflow')) {
+    $result = db_query('SELECT re.*, u.name, u.uid FROM {proyectos_reformular_state} re INNER JOIN {users} u ON u.uid = re.uid WHERE nid = %d AND id_ref = %d ORDER BY date DESC', $node->nid, $id_ref);
+    while($history = db_fetch_object($result)) {
+      $historys[] = $history;
+    }
+  }
+  $variables['historys'] = $historys;
+}
+
+function _sipp_pdf_aeview($node, $reformulacion_load = 0, $ae = 0) {
+  $pdf = _sipp_pdf_pdf_init();
+  $id_ref = $reformulacion_load ? $reformulacion_load->id_ref : 0;
+  $reformula = _proyectos_reformulacion_load($node, $id_ref);
+  $variaciones = _proyectos_reformula_all_partidas_load($node, $id_ref);
+  $html = theme('proyectos_reformulacion_reformula_tab_ae_page_pdf', $node, $reformulacion_load, $ae, $id_ref, $reformula, $variaciones);
+  if ($pdf) {
+    $pdf->SetTitle('AE ' . $ae->title);
+    $pdf->SetSubject('AE: ' . $ae->title);
+    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->lastPage();
+    header('Content-type: text/plain');
+    $name = 'accionespecifica_' . $ae->nid . '.pdf';
+    header('Content-Disposition: attachment; filename="' . $name . '"');
+    print $pdf->Output('accionespecifica_' . $ae->nid . '.pdf', 'I');
+    exit();
+  }
+  else {
+    return $html;
+  }
+}
+
+function template_preprocess_proyectos_reformulacion_reformula_tab_ae_page_pdf(&$variables) {
+  $id_ref = $variables['id_ref'];
+  $reformula = $variables['reformula'];
+  $variaciones = $variables['variaciones'];
+  $proyecto = $variables['proyecto'];
+  $ente_planificador = node_load($proyecto->field_proyecto_ente[0]['nid']);
+  $variables['ente_planificador'] = $ente_planificador;
+  $ftypes = array(
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $variables['ftypes'] = $ftypes;
+  $ae = $variables['ae'];
+  $partidas_nodo = array();
+  foreach ($ae->field_accion_esp_programacion as $partida) {
+    if(!empty($partida['tid'])) {
+      $partidas_nodo[$partida['tid']] = $partida;
+    }
+  }
+  $variables['partidas_nodo'] = $partidas_nodo;
+  $field = content_fields('field_accion_esp_programacion', 'accion_especifica');
+  $tree = taxonomy_get_tree($field['vid']);
+  $vtid = $field['vtid'];
+  $partidas = array();
+  if ($tree) {
+    foreach ($tree as $term) {
+      if (isset($vtid[$term->tid])) {
+        $partidas[$term->tid] = $term->name;
+      }
+    }
+  }
+  $variables['partidas'] = $partidas;
+  $arreglo = array();
+  $titles = array(
+    'ordinarios' => t('Recursos Ordinarios'),
+    'propios' => t('Recursos Propios'),
+    'transferencias' => t('Donaciones'),
+    'otros' => t('Otros'),
+  );
+  $titles_field = array(
+    'field_accion_esp_transferencias' => t('Recursos Ordinarios'),
+    'field_accion_esp_creditosa' => t('Recursos Propios'),
+    'transferencias' => t('Donaciones'),
+    'otros' => t('Otros'),
+  );
+  $variables['titles_field'] = $titles_field;
+
+  $arreglo['ordinarios'] = array(
+    'field_accion_esp_transferencias' => 'field_accion_esp_transferencias',
+    'field_accion_esp_creditosa' => 'field_accion_esp_creditosa',
+    'field_accion_esp_mcti' => 'field_accion_esp_mcti',
+  );
+  $arreglo['propios'] = array(
+    'field_accion_esp_venta_act' => 'field_accion_esp_venta_act',
+    'field_accion_esp_activos' => 'field_accion_esp_activos',
+    'field_accion_esp_flujocaja' => 'field_accion_esp_flujocaja',
+    'field_accion_esp_ventapro' => 'field_accion_esp_ventapro',
+  );
+  $arreglo['transferencias'] = array(
+    'field_accion_esp_donaciones' => 'field_accion_esp_donaciones',
+  );
+  $arreglo['otros'] = array(
+    'field_accion_esp_gobernacion' => 'field_accion_esp_gobernacion',
+    'field_accion_esp_misionc' => 'field_accion_esp_misionc',
+    'field_accion_esp_bid_fona' => 'field_accion_esp_bid_fona',
+    'field_accion_esp_fonacit' => 'field_accion_esp_fonacit',
+    'field_accion_esp_fonden' => 'field_accion_esp_fonden',
+    'field_accion_esp_locti' => 'field_accion_esp_locti',
+    'field_accion_esp_fondoidi' => 'field_accion_esp_fondoidi',
+    'field_accion_esp_capitalrie' => 'field_accion_esp_capitalrie',
+    'field_accion_esp_infocentro' => 'field_accion_esp_infocentro',
+    'field_accion_esp_fidetel' => 'field_accion_esp_fidetel',
+  );
+  $variables['arreglo'] = $arreglo;
+}
+
+
+
+
+function _proyectos_reformulacion_reformula_tab_page_ver_ae_pdf($node, $reformulacion_load = 0, $ae = 0) {
+  $planificado = t('planificado');
+  $variacion = t('variación');
+  $ftypes = array(
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $partidas_nodo = array();
+  foreach ($ae->field_accion_esp_programacion as $partida) {
+    if(!empty($partida['tid'])) {
+      $partidas_nodo[$partida['tid']] = $partida;
+    }
+  }
+
+  $id_ref = $reformulacion_load ? $reformulacion_load->id_ref : 0;
+  $reformula = _proyectos_reformulacion_load($node, $id_ref);
+  $variaciones = _proyectos_reformula_all_partidas_load($node, $id_ref);
+  $field = content_fields('field_accion_esp_programacion', 'accion_especifica');
+  $tree = taxonomy_get_tree($field['vid']);
+  $vtid = $field['vtid'];
+  $partidas = array();
+  if ($tree) {
+    foreach ($tree as $term) {
+      if (isset($vtid[$term->tid])) {
+        $partidas[$term->tid] = $term->name;
+      }
+    }
+  }
+
+  $arreglo = array();
+  $titles = array(
+    'ordinarios' => t('Recursos Ordinarios'),
+    'propios' => t('Recursos Propios'),
+    'transferencias' => t('Donaciones'),
+    'otros' => t('Otros'),
+  );
+  $titles_field = array(
+    'field_accion_esp_transferencias' => t('Recursos Ordinarios'),
+    'field_accion_esp_creditosa' => t('Recursos Propios'),
+    'transferencias' => t('Donaciones'),
+    'otros' => t('Otros'),
+  );
+
+
+  $arreglo['ordinarios'] = array(
+    'field_accion_esp_transferencias' => 'field_accion_esp_transferencias',
+    'field_accion_esp_creditosa' => 'field_accion_esp_creditosa',
+    'field_accion_esp_mcti' => 'field_accion_esp_mcti',
+  );
+  $arreglo['propios'] = array(
+    'field_accion_esp_venta_act' => 'field_accion_esp_venta_act',
+    'field_accion_esp_activos' => 'field_accion_esp_activos',
+    'field_accion_esp_flujocaja' => 'field_accion_esp_flujocaja',
+    'field_accion_esp_ventapro' => 'field_accion_esp_ventapro',
+  );
+  $arreglo['transferencias'] = array(
+    'field_accion_esp_donaciones' => 'field_accion_esp_donaciones',
+  );
+  $arreglo['otros'] = array(
+    'field_accion_esp_gobernacion' => 'field_accion_esp_gobernacion',
+    'field_accion_esp_misionc' => 'field_accion_esp_misionc',
+    'field_accion_esp_bid_fona' => 'field_accion_esp_bid_fona',
+    'field_accion_esp_fonacit' => 'field_accion_esp_fonacit',
+    'field_accion_esp_fonden' => 'field_accion_esp_fonden',
+    'field_accion_esp_locti' => 'field_accion_esp_locti',
+    'field_accion_esp_fondoidi' => 'field_accion_esp_fondoidi',
+    'field_accion_esp_capitalrie' => 'field_accion_esp_capitalrie',
+    'field_accion_esp_infocentro' => 'field_accion_esp_infocentro',
+    'field_accion_esp_fidetel' => 'field_accion_esp_fidetel',
+  );
+  $output = '';
+  $ente_planificador = node_load($node->field_proyecto_ente[0]['nid']);
+  //$output .= '<fieldset><legend>' . t('Resumen del Proyecto') . '</legend>';
+  $output .= '<div class="field"><div class="field-label">' . t('Código Único del Proyecto') . ':</div>' . $node->field_proyecto_codigo[0]['value'] . '</div>';
+  $output .= '<div class="field"><div class="field-label">' . t('Nombre del Proyecto') . ':</div>' . $node->title . '</div>';
+  $output .= '<div class="field"><div class="field-label">' . t('Organismo') . ':</div>' . $ente_planificador->title . '</div>';
+  //$output .= '</fieldset>';
+
+
+  //$output .= '<fieldset><legend>' . t('Resumen Financiero de las Acciones') . '</legend>';
+  $output .= '<div class="field"><div class="field-label">' . t('Resumen Financiero de las Acciones') . ':</div>'. '</div>';
+  $header = array();
+  $header[] = array('data' => t('Partidas'), 'colspan' => 2);
+  foreach($ftypes as $id_field => $texto) {
+    $header[] = array('data' => $texto);
+  }
+  $header[] = array('data' => t('TOTAL'));
+  $rows = array();
+  $rowsF = array();
+  $i = 0;
+  $totales = array();
+  $totalT = 0;
+  $plant = array();
+  $sumaplan = 0;
+  $sumaplanm = array();
+  foreach($partidas as $tid => $grupo) {
+    $i++;
+    $total = 0;
+    $total1 = 0;
+    $row = array();
+    $row1 = array();
+    $row[] = array('data' => $grupo, 'rowspan' => 2);
+    $row[] = array('data' => $planificado, );
+    $row1[] = array('data' => $variacion, );
+    foreach($ftypes as $id_field => $texto) {
+      $varia = isset($variaciones['field_accion_esp_programacion_' . $ae->nid][$tid][$id_field]) ? $variaciones['field_accion_esp_programacion_' . $ae->nid][$tid][$id_field] : 0;
+      $min = $partidas_nodo[$tid][$id_field] + $varia;
+      $valor = isset($reformula['field_accion_esp_programacion_' . $ae->nid][$tid][$id_field])? $reformula['field_accion_esp_programacion_' . $ae->nid][$tid][$id_field] : 0;
+      $total1 += $valor;
+      $totalT += $min + $valor;
+      if (!isset($plant[$tid])) {
+        $plant[$tid] = 0;
+      }
+      $plant[$tid] += $min;
+      $sumaplan += $min;
+      if (!isset($totales[$id_field])) {
+        $totales[$id_field] = 0;
+      }
+      if (!isset($sumaplanm[$id_field])) {
+        $sumaplanm[$id_field] = 0;
+      }
+      $sumaplanm[$id_field] += $min;
+      $totales[$id_field] += $min + $valor;
+      $idformu = $ae->nid . '_field_accion_esp_programacion_' . $tid . '_' . $id_field;
+      $idformuj = str_replace('_', '-', $idformu);
+      $row[] = array('data' => $min, );
+      $row1[] = array('data' => $valor, );
+    }
+    $row[] = array('data' => $plant[$tid], );
+    $row1[] = array('data' => $total1, );
+    $rows[] = $row;
+    $rows[] = $row1;
+  }
+  $row = array();
+  $row[] = array('data' => '<b>' . t('TOTAL') . '</b>', 'colspan' => 2, 'align' => 'right');
+  foreach($ftypes as $id_field => $texto) {
+    $row[] = array('data' => $totales[$id_field], );
+  }
+  $row[] = array('data' => $totalT, );
+  $rows[] = $row;
+  $output .= theme('table', $header, $rows, array('border' => '1'));
+ // $output .= '</fieldset>';
+  $rows = array();
+  $row = array();
+  $row1 = array();
+  $sumalT = 0; 
+  foreach($arreglo as $id => $arreglo1) {
+    $sumal = 0; 
+    $output1 = '';
+    foreach($arreglo1 as $id1) {
+      $field = content_fields($id1, 'accion_especifica');
+      $varia = isset($variaciones[$id1 . '_' . $ae->nid][0]['value']) ? $variaciones[$id1 . '_' . $ae->nid][0]['value'] : 0;
+      $min = $ae->{$id1}[0]['value'] + $varia;
+      if (!isset($sumafinm[$id])) {
+        $sumafinm[$id] = 0;
+      }
+      $sumafinm[$id] += $min;
+      $sumatotalf += $min;
+      $field = content_fields($id1, 'accion_especifica');
+      $valor = isset($reformula[$id1 . '_' . $ae->nid][0]['value'])? $reformula[$id1 . '_' . $ae->nid][0]['value'] : 0;
+      $total1 += $valor;
+      $total += $valor;
+      $sumal += $min + $valor; 
+      $sumalT += $min + $valor; 
+      $idformuj = str_replace('_', '-', $id1);
+      $output1 .= '<p><b>' . $field['widget']['label'] . ':</b>' . '<br><b>' . t('Planificado') . ':</b> ' . $min . '<br><b>' . t('Variación') . ':</b> ' . $valor .  '</p>';
+    }
+    $row[] = array('data' => $output1, );
+    $row1[] = array('data' => $sumal, );
+  }
+  $rows[] = $row;
+  $rows[] = $row1;
+  $row = array();
+  $row[] = array('data' => '<b>' . t('TOTAL') . ':</b>', 'colspan' => 3, 'align' => 'right');
+  $row[] = array('data' => $sumalT, );
+  $rows[] = $row;
+  $output .= '<div class="field"><div class="field-label">' . t('Distribución por fuentes de Financiamiento (Bs.)') . ':</div>'. '</div>';
+  $output .= theme('table', array(), $rows, array('border' => '1'));
+  return $output;
+}
+*/
