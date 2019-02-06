@@ -1,0 +1,1679 @@
+<?php
+
+  /**
+  * Modulo para importar entes y terminos
+  * Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+  * @file ente_planificador_importar.module
+  * Drupal part Module to code ente planificador module
+  * Copyright 2011 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * @author Cenditel Merida - Msc. Juan Vizcarrondo
+  * @date 2016-07-07 // (a&#241;o-mes-dia)
+  * @date 2017-03-22 // (a&#241;o-mes-dia)
+  * @version 0.2 // (0.1)
+  *
+  */
+
+/*
+ * Implementation of hook_perm
+ */
+function ente_planificador_importar_perm() {
+  return array(
+    'access import entes planificadores',
+    'import entes planificadores',
+    'import term',
+    'update proyecto state',
+  );
+}
+
+/*
+ * Implementation of hook_menu()
+ */
+function ente_planificador_importar_menu() {
+  $items = array();
+  $items['ente_planificador_importar'] = array(
+    'title' => 'Importar Entes Planificadores',
+    'page callback' => '_ente_planificador_importar_listar',
+    'access arguments' => array('access import entes planificadores'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['ente_planificador_importar/entes'] = array(
+    'title' => 'Importar Entes Planificadores',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_importar_form'),
+    'access arguments' => array('import entes planificadores'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['ente_planificador_importar/updb_proyectos'] = array(
+    'title' => 'Importar Entes Planificadores',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_importar_updb_proyectos_form'),
+    'access arguments' => array('import entes planificadores'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['ente_planificador_importar/terminos'] = array(
+    'title' => 'Importar Terminos',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_importar_terminos_form'),
+    'access arguments' => array('import term'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['ente_planificador_importar/terminos/fields'] = array(
+    'title' => 'Importar Campos de Terminos',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_importar_terminos_fields_form'),
+    'access arguments' => array('import term'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['ente_planificador_importar/terminos/relations_fields'] = array(
+    'title' => 'Importar Campos de Terminos',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_importar_terminos_relations_fields_form'),
+    'access arguments' => array('import term'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['ente_planificador_importar_terminos_js_util'] = array(
+    'title' => 'JS utilities',
+    'page callback' => 'ente_planificador_importar_fields_js_util',
+    'access arguments' => array('import term'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['ente_planificador_importar_terminos_relations_js_util'] = array(
+    'title' => 'JS utilities',
+    'page callback' => 'ente_planificador_importar_fields_relations_js_util',
+    'access arguments' => array('import term'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['ente_planificador_importar/estadoproyecto'] = array(
+    'title' => 'Modificar estado de poyectos',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ente_planificador_importar_aprobar_proyectos_form'),
+    'access arguments' => array('update proyecto state'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/*
+ * Implementation of _ente_planificador_importar_listar()
+ * Muestra las opciones de importacion disponibles
+ */
+function _ente_planificador_importar_listar() {
+  $links = array();
+  drupal_alter('ente_planificador_importar_links', $links);
+  return theme('item_list', $links);
+}
+
+/*
+ * Implementation of hook_ente_planificador_importar_links_alter()
+ */
+function ente_planificador_ente_planificador_importar_links_alter(&$links) {
+  if (user_access('import entes planificadores')) {
+    $links['entes'] = array(
+      'data' => l(t('Importar Entes Planificadores'), 'ente_planificador_importar/entes'),
+      'class' => 'ente-planificador-importar-entes',
+    );
+  }
+  if (user_access('import term')) {
+    $links['term1'] = array(
+      'data' => l(t('Importar terminos'), 'ente_planificador_importar/terminos'),
+      'class' => 'ente-planificador-importar-term',
+    );
+    $links['term2'] = array(
+      'data' => l(t('Importar Campos de terminos'), 'ente_planificador_importar/terminos/fields'),
+      'class' => 'ente-planificador-importar-term-fields',
+    );
+    $links['term_parent'] = array(
+      'data' => l(t('Relacionar taxonomias y guardar valores en un campo del termino'), 'ente_planificador_importar/terminos/relations_fields'),
+      'class' => 'ente-planificador-importar-term-parents-fields',
+    );
+  }
+  if (user_access('update proyecto state')) {
+    $links['estadoproyecto'] = array(
+      'data' => l(t('Actualizar estado de proyectos'), 'ente_planificador_importar/estadoproyecto'),
+      'class' => 'ente-planificador-importar-estado-proyecto',
+    );
+  }
+}
+
+/**
+ * Implementation of ente_planificador_importar_terminos_form().
+ * Form to load cvs file in term import
+ */
+function ente_planificador_importar_terminos_relations_fields_form(&$form_state) {
+  $form = array();
+  // If this #attribute is not present, upload will fail on submit
+
+  $form['#prefix'] = "<div id='fields-ahah-taxonomy'>";
+  $form['#suffix'] = "</div>";
+  $options[0] = t('_none');
+  foreach (taxonomy_get_vocabularies() as $key => $taxonomy) {
+     $options[$taxonomy->vid] = $taxonomy->name;
+  }
+
+  $form['vid'] = array(
+    '#type' => 'select',
+    '#title' => t('Taxonomia Origen'),
+    '#options' =>  $options,
+    '#weight' => 0,
+    '#required' => true,
+    '#default_value' => 0,
+  );
+
+  $form['vid_taxonomy'] = array(
+    '#type' => 'select',
+    '#title' => t('Taxonomy to relations'),
+    '#options' =>  $options,
+    '#weight' => 1,
+    '#required' => true,
+    '#default_value' => 0,
+    '#ahah' => array(
+      'path' => 'ente_planificador_importar_terminos_relations_js_util',
+      'wrapper' => 'fields-ahah-taxonomy',
+      'method' => 'replace',
+      'progress' => array('type' => 'bar', 'message' => t('Please wait...')),
+    ),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+    '#weight' => 10,
+  );
+  return $form;
+}
+
+/**
+ * Implementation of ente_planificador_importar_terminos_form_submit().
+ * Submit cvs file in term import
+ */
+function ente_planificador_importar_terminos_relations_fields_form_submit($form, &$form_state) {
+  global $user;
+  $validators = array('file_validate_extensions' => array('csv'));
+  // Check for a new uploaded file.
+  $file = file_save_upload('file_import_terms', $validators);
+  if (isset($file)) {
+    // File upload was attempted.
+    if ($file) {
+      // Put the temporary file in form_values so we can save it on submit.
+      $csv = $file->filepath;
+      $file = fopen($csv, 'r');
+      $time = time();
+      $i = 1;
+      $datas = array();
+      $batch = array(
+        'title' => t('Importing terminos ...', array('@format' => $format)),
+        'operations' => array(),
+        'init_message' => t('Commencing'),
+        'progress_message' => t('Processed @current out of @total.'),
+        'error_message' => t('An error occurred during processing'),
+        'finished' => '_batch_ente_planificador_importar_term_finished',
+      );
+      $ids = array(
+        'field1' => t('Campo 1'),
+        'field2' => t('Campo 2'),
+        'field3' => t('Campo 3'),
+      );
+      $terms = ente_planificador_importar_terminos_relations_fields_name($form_state['values']['vid']);
+      $term_load = array();
+      while (($data = fgetcsv($file)) !== FALSE) {
+         if (!($form_state['values']['encabezado'] && $i == 1)) {
+           $taxonomy_relations = taxonomy_vocabulary_load($form_state['values']['vid']);
+           $taxonomy = taxonomy_vocabulary_load($form_state['values']['vid_taxonomy']);
+           $name_field = trim(check_plain($data[$form_state['values']['nombre'] - 1]));
+           $name_field2 = trim(check_plain($data[$form_state['values']['nombre2'] - 1]));
+
+           if ($terms[$name_field]->tid) {
+             $term = $terms[$name_field];
+           }
+           else if ($terms["$name_field."]->tid) {
+             $term = $terms["$name_field."];
+           }
+           else if ($terms[$name_field2]->tid) {
+             $term = $terms[$name_field2];
+           }
+           else if ($terms["$name_field2."]->tid) {
+             $term = $terms["$name_field2."];
+          }
+
+           if ($term->tid) {
+             $term_load = array(
+                'vid' => $taxonomy->vid, // Voacabulary ID
+                'name' => $term->name, // Term Name
+              );
+              taxonomy_save_term($term_load);
+              $term_load['fields'][$form_state['values']['relation']] = array(
+                'value' => $term->tid,
+              );
+           }
+           $j = 0;
+           foreach ($ids as $id => $name) {
+             if ($form_state['values'][$id] && $data[$form_state['values'][$id] - 1]) {
+               $values = array_values($form_state['values']['fields']);
+               $term_load['fields']["$values[$j]"] = array(
+                  'value' => check_plain($data[$form_state['values'][$id] - 1]),
+               );
+             }
+             $j++;
+           }
+           $batch['operations'][] = array('_batch_ente_planificador_importar_term_relations_fields', array($term_load));
+        }
+        $i++;
+      }
+      batch_set($batch);
+      batch_process('ente_planificador_importar/terminos/relations_fields');
+    }
+    else {
+      // File upload failed.
+      form_set_error('file_import_terms', t('The term file could not be uploaded.'));
+    }
+  }
+}
+
+function ente_planificador_importar_terminos_relations_fields_name($vid) {
+  $result = db_query(db_rewrite_sql('SELECT t.tid, t.*, parent FROM {term_data} t INNER JOIN {term_hierarchy} h ON t.tid = h.tid WHERE t.vid = %d ORDER BY weight, name', 't', 'tid'), $vid);
+  while ($term = db_fetch_object($result)) {
+    $terms[trim($term->name)] = $term;
+  }
+  return $terms;
+}
+
+/**
+ * Genera las repuestas ajax
+ */
+function ente_planificador_importar_fields_relations_js_util() {
+  $form_state = array('submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  $form = form_get_cache($form_build_id, $form_state);
+
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  // We will run some of the submit handlers so we need to disable redirecting.
+  $form['#redirect'] = FALSE;
+  // We need to process the form, prepare for that by setting a few internals
+  // variables.
+  $form['#post'] = $_POST;
+  $form['#programmed'] = FALSE;
+  $form_state['post'] = $_POST;
+
+  $values = term_fields_get_fields('fields');
+
+  if (isset($_POST['vid_taxonomy'])) {
+    $values = term_fields_get_fields('fields');
+    $i = 1;
+    $k = 1;
+    $fields[0] = t("_none");
+    $fields_op[0] = t("_none");
+    foreach ($values as $value) {
+      foreach ($value->vids as $key => $vid) {
+        $taxonomy = taxonomy_vocabulary_load($vid['vid']);
+        if ($value->type == 'numeric' && $taxonomy->vid == $_POST['vid_taxonomy']) {
+          $fields_op["$value->fid"] = t('@title (Valor del Campo n@campo)', array('@title' => $value->title, '@campo' => $k));
+          $k++;
+        }
+        else if ($taxonomy->vid == $_POST['vid_taxonomy']) {
+          $fields["$value->fid"] = t('@title (Valor del Campo n@campo)', array('@title' => $value->title, '@campo' => $i));
+        $i++;
+        }
+      }
+    }
+    $form['relation'] = array(
+      '#type' => 'select',
+      '#title' => t('Campos Numerico a relacionar'),
+      '#options' => $fields_op,
+      '#weight' => 2,
+      '#default_value' => $fields[0],
+    );
+    $form['fields'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Campos a recolectar'),
+      '#options' => $fields,
+      '#weight' => 2,
+      '#default_value' => $fields[0],
+    );
+    if (count($fields)) {
+      $form['#attributes']['enctype'] = 'multipart/form-data';
+      $form['file_import_terms'] = array(
+        '#title' => t('Archivo (Terminos a importar)'),
+        '#type'  => 'file',
+        '#description' => t('Archivo cvs con el contenido de los terminos a importar'),
+        '#weight' => 3,
+      );
+      $options = array();
+      for ($i = 0;$i < 11; $i++) {
+        if (!$i) {
+          $options[$i] = t('N/A');
+        }
+        else {
+          $options[$i] = t('Fila') . ' ' . $i;
+        }
+      }
+      $form['fieldset'] = array(
+        '#title' => t('Nombres'),
+        '#type' => 'fieldset',
+        '#weight' => 4,
+      );
+      $form['fieldset']['nombre'] = array(
+        '#type' => 'select',
+        '#title' => t('Nombre del Termino'),
+        '#options' => $options,
+        '#description' => t("La fila donde se encuentra el valor del Campo."),
+        '#required' => TRUE,
+        '#weight' => 4,
+      );
+      $form['fieldset']['nombre2'] = array(
+        '#type' => 'select',
+        '#title' => t('Nombre del Termino 2'),
+        '#options' => $options,
+        '#description' => t("La fila donde se encuentra el valor del Campo de no presentarse un valor en el primer campo."),
+        '#required' => TRUE,
+        '#weight' => 4,
+      );
+      $ids = array(
+        'field1' => t('Campo 1'),
+        'field2' => t('Campo 2'),
+        'field3' => t('Campo 3'),
+      );
+      $i = 0;
+      foreach ($ids as $id =>$text) {
+        $i++;
+        $form[$id] = array(
+          '#type' => 'select',
+          '#title' => $text,
+          '#options' => $options,
+          '#weight' => 5 + $i,
+        );
+      }
+      $form['encabezado'] = array(
+        '#title' => 'Primera columna como encabezado',
+        '#type' => 'checkbox',
+        '#return_value' => '1',
+        '#weight' => 9,
+      );
+    }
+  }
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+  // Rebuild the form.
+  $form = form_builder($_POST['form_id'], $form, $form_state);
+  // Render the new output.
+  $new_form = array();
+  $new_form = $form;
+  unset($new_form['#prefix'], $new_form['#suffix']); // Prevent duplicate wrappers.
+  $output = drupal_render($new_form);
+  print drupal_to_js(array('data' => $output, 'status' => true));
+  exit();
+  print '';
+  exit();
+}
+
+
+/**
+ * Implementation of _batch_ente_planificador_importar_term_fields().
+ * display term saved (used in _ente_planificador_importar_terminos_execute)
+ * Batch run callback
+ */
+function _batch_ente_planificador_importar_term_relations_fields($term, &$context) {
+  $parents = taxonomy_get_parents($term['tid']);
+  if ($parents) {
+    $parent = array_shift($parents);
+    $parent = $parent->tid;
+  }
+  else {
+    $parent = 0;
+  }
+  $term['parent'] = $parent;
+  taxonomy_save_term($term);
+
+//watchdog('example', 'taxonomy term <pre>@filename</pre>.', array('@filename' => print_r($term, 1)), WATCHDOG_ERROR);
+
+  $context['message'] = t('Now processing ente: %submission', array('%submission' => $term['name']));
+  $context['results'][] = 'term importado: ' . $term['name'] . '</pre>';
+
+  if ($context['sandbox']['progress'] >= $context['sandbox']['max']) {
+    $context['finished'] = 1;
+  } else {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
+
+}
+
+
+/**
+ * Update values of field to type content
+ */
+function ente_planificador_importar_updb_proyectos_form(&$form_state) {
+  $form = array();
+  // If this #attribute is not present, upload will fail on submit
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+  $form['file_import_entes'] = array(
+    '#title' => t('Archivo a importar'),
+    '#type'  => 'file',
+    '#description' => t('Archivo cvs con el contenido de los terminos a importar'),
+    '#weight' => -1,
+  );
+
+  $options = array();
+  for ($i = 0;$i < 30; $i++) {
+    if (!$i) {
+      $options[$i] = t('N/A');
+    }
+    else {
+      $options[$i] = t('Fila') . ' ' . $i;
+    }
+  }
+  $form['field_name'] = array(
+    '#type' => 'select',
+    '#title' => t('Nombre del campo'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el nombre del Campo a modificar."),
+    '#required' => TRUE,
+    '#weight' => 0,
+  );
+
+  $form['field_nid'] = array(
+    '#type' => 'select',
+    '#title' => t('Nid del nodo'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el nid del nodo a modificar."),
+    '#required' => TRUE,
+    '#weight' => 1,
+  );
+
+  $form['field_vid'] = array(
+    '#type' => 'select',
+    '#title' => t('Vid del campo'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el vid del nodo a modificar."),
+    '#required' => TRUE,
+    '#weight' => 2,
+  );
+
+  $form['type_content'] = array(
+    '#type' => 'select',
+    '#title' => t('tipo de contenido del campo'),
+    '#options' => $options,
+    '#description' => t("seleccione la columna donde se encuentre el tipo de contenido del campo."),
+    '#required' => TRUE,
+    '#weight' => 3,
+  );
+
+  $form['field_delta'] = array(
+    '#type' => 'select',
+    '#title' => t('Delta del campo'),
+    '#options' => $options,
+    '#description' => t("si el campo es multiple seleccione la columna donde se encuentre el delta."),
+    '#required' => TRUE,
+    '#weight' => 4,
+  );
+
+  $form['field_tid'] = array(
+    '#type' => 'select',
+    '#title' => t('tid del campo'),
+    '#options' => $options,
+    '#description' => t("si el campo es multiple seleccione la columna donde se encuentre el tid."),
+    '#required' => TRUE,
+    '#weight' => 5,
+  );
+
+  $form['fields'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Campos'),
+    '#weight' => 6,
+  );
+  for ($i=0; $i<12; $i++) {
+    $form['fields']['field_value_' . $i] = array(
+      '#type' => 'select',
+      '#title' => t('Valor del campo ' . $i),
+      '#options' => $options,
+      '#description' => t("La fila donde se encuentra el valor del nodo a modificar."),
+      '#required' => TRUE,
+      '#weight' => $i,
+    );
+  }
+
+  $form['encabezado'] = array(
+    '#title' => 'Primera columna como encabezado',
+    '#type' => 'checkbox',
+    '#return_value' => '1',
+    '#weight' => 7,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+    '#weight' => 35,
+  );
+  return $form;
+}
+
+/**
+ * Implementation of function ente_planificador_importar_updb_proyectos_form().
+ * Update values of field to type content
+ */
+function ente_planificador_importar_updb_proyectos_form_submit($form, &$form_state) {
+  global $user;
+  $validators = array('file_validate_extensions' => array('csv'));
+  // Check for a new uploaded file.
+  $file = file_save_upload('file_import_entes', $validators);
+  if (isset($file)) {
+    include_once('./'. drupal_get_path('module', 'content') .'/content.install');
+    drupal_load('module', 'content');
+    // $types = content_types_install();
+    // if (empty($types)) {
+    //   return $ret;
+    // }
+
+    // File upload was attempted.
+    if ($file) {
+
+      // Put the temporary file in form_values so we can save it on submit.
+      $csv = $file->filepath;
+      $file = fopen($csv, 'r');
+      $time = time();
+      $i = 1;
+      $batch = array(
+        'title' => t('Update value proyects and acciones ...', array('@format' => $format)),
+        'operations' => array(),
+        'init_message' => t('Commencing'),
+        'progress_message' => t('Processed @current out of @total.'),
+        'error_message' => t('An error occurred during processing'),
+        'finished' => '_batch_ente_planificador_importar_finished',
+      );
+
+      //read the csv archive
+      $data_all =  fread($file, filesize($csv));
+      $fgetslines = explode("\n",$data_all);
+      $process = count($fgetslines);
+      $process = $form_state['values']['encabezado'] && $i == 1 ? $process-1 : $process ;
+      $encabezado = $form_state['values']['encabezado'] && $i == 1 ? 1 : 0 ;
+
+      for ($k=$encabezado; $k < $process; $k++) {
+        $data_line = explode("\n",$data_all);
+        $data_line_all = $data_line[$k];
+        $data = explode(",",$data_line_all);
+
+        $batch['operations'][] = array('_ente_planificador_importar_updb_proyectos_importar', array( $data, $form_state['values']));
+      }
+
+      batch_set($batch);
+      batch_process('ente_planificador_importar/updb_proyectos');
+    }
+    else {
+
+      // File upload failed.
+      form_set_error('file_import_entes', t('The entes file could not be uploaded.'));
+    }
+  }
+}
+
+/**
+ * Update values of field to type content
+ * Batch run callback
+ */
+ function _ente_planificador_importar_updb_proyectos_importar( $data, $formstate_values, &$context) {
+
+   $fields_update = trim($data[$formstate_values['field_name']-1]);
+   $field = content_fields($fields_update, $data[$formstate_values['type_content']-1]);
+   $values[] = $field;
+   $index = array();
+   for ($i=0; $i<12; $i++) {
+     $index[] = $i === 0? 'value' : 'value_' . $i;
+   }
+
+   $rate = 100000;
+   $sql = '';
+   foreach ($values as $field) {
+     if ($field['multiple']) {
+       $sql.=' and delta = '. $data[$formstate_values['field_delta']-1];
+     }
+     $db_info = content_database_info($field);
+     if (array_key_exists('tid', $db_info['columns'])) {
+       $sql.= ' and ' . $db_info['columns']['tid']['column'] . ' = ' . $data[$formstate_values['field_tid']-1] ;
+
+     }
+     $table = $db_info['table'];
+     $columns = array();
+
+     foreach($index as $key => $id) {
+       if (isset($db_info['columns'][$id])) {
+         $value = trim($data[$formstate_values['field_value_' . $key]-1]);
+         $attributes = $db_info['columns'][$id];
+         $column = $attributes['column'];
+
+         $decimals = isset($field['scale']) && is_numeric($field['scale'])? $field['scale'] : 0;
+         if(!$value==0) {
+           $columns[] = $column  . ' = round(' . $value . '/' . $rate . ', ' . $decimals . ')';
+         } else {
+           $columns[] = $column  . ' = 0 ';
+         }
+       }
+     }
+
+ //watchdog('Test Sipes', '$columns @filename.', array('@filename' => print_r($columns,1)), WATCHDOG_ERROR);
+
+     update_sql('UPDATE {'. $db_info['table'] . '} AS tab SET '. implode(', ', $columns) . ' FROM {node} AS n WHERE n.nid = tab.nid AND n.vid = tab.vid AND n.vid = ' . $data[$formstate_values['field_vid']-1] . ' AND n.nid =' . $data[$formstate_values['field_nid']-1] . $sql );
+   }
+
+   $context['message'] = t('Now processing nid of node: %submission', array('%submission' => trim($data[$formstate_values['field_nid']-1])));
+   $context['results'][] = 'Node update: ' . trim($data[$formstate_values['field_nid']-1]) . '</pre>';
+
+   if ($context['sandbox']['progress'] >= $context['sandbox']['max']) {
+     $context['finished'] = 1;
+   } else {
+     $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+   }
+ }
+
+
+
+/**
+ * Implementation of ente_planificador_importar_terminos_form().
+ * Form to load cvs file in term import
+ */
+function ente_planificador_importar_terminos_fields_form(&$form_state) {
+  $form = array();
+  // If this #attribute is not present, upload will fail on submit
+
+  $form['#prefix'] = "<div id='fields-ahah-taxonomy'>";
+  $form['#suffix'] = "</div>";
+  $options[0] = t('_none');
+  foreach (taxonomy_get_vocabularies() as $key => $taxonomy) {
+     $options[$taxonomy->vid] = $taxonomy->name;
+  }
+
+  $form['vid'] = array(
+    '#type' => 'select',
+    '#title' => t('Taxonomy'),
+    '#options' =>  $options,
+    '#weight' => 0,
+    '#required' => true,
+    '#default_value' => 0,
+    '#ahah' => array(
+      'path' => 'ente_planificador_importar_terminos_js_util',
+      'wrapper' => 'fields-ahah-taxonomy',
+      'method' => 'replace',
+      'progress' => array('type' => 'bar', 'message' => t('Please wait...')),
+    ),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+    '#weight' => 10,
+  );
+  return $form;
+}
+
+/**
+ * Implementation of ente_planificador_importar_terminos_form_submit().
+ * Submit cvs file in term import
+ */
+function ente_planificador_importar_terminos_fields_form_submit($form, &$form_state) {
+  global $user;
+  $validators = array('file_validate_extensions' => array('csv'));
+  // Check for a new uploaded file.
+  $file = file_save_upload('file_import_terms', $validators);
+  if (isset($file)) {
+    // File upload was attempted.
+    if ($file) {
+      // Put the temporary file in form_values so we can save it on submit.
+      $csv = $file->filepath;
+      $file = fopen($csv, 'r');
+      $time = time();
+      $i = 1;
+      $datas = array();
+      $batch = array(
+        'title' => t('Importing terminos ...', array('@format' => $format)),
+        'operations' => array(),
+        'init_message' => t('Commencing'),
+        'progress_message' => t('Processed @current out of @total.'),
+        'error_message' => t('An error occurred during processing'),
+        'finished' => '_batch_ente_planificador_importar_term_finished',
+      );
+      $ids = array(
+        'field1' => t('Campo 1'),
+        'field2' => t('Campo 2'),
+        'field3' => t('Campo 3'),
+      );
+
+      while (($data = fgetcsv($file)) !== FALSE) {
+         $taxonomy = taxonomy_vocabulary_load($form_state['values']['vid']);
+         $terms = taxonomy_get_tree($taxonomy->vid);
+         $name_field = check_plain($data[$form_state['values']['nombre'] - 1]);
+         foreach ($terms as $term) {
+           if (preg_match("/\b$name_field/i", trim($term->name))) { //not found
+              $term_load = taxonomy_get_term($term->tid);
+              $term_load = (array) $term_load;
+              $j = 0;
+              foreach ($ids as $id => $name) {
+                if ($form_state['values'][$id] && $data[$form_state['values'][$id] - 1]) {
+                  $values = array_values($form_state['values']['fields']);
+                  $term_load['fields']["$values[$j]"] = array(
+                     'value' => check_plain($data[$form_state['values'][$id] - 1]),
+                  );
+               }
+               $j++;
+             }
+             if (!($form_state['values']['encabezado'] && $i == 1)) {
+               $batch['operations'][] = array('_batch_ente_planificador_importar_term_fields', array($term_load));
+             }
+           }
+         }
+         $i++;
+      }
+      batch_set($batch);
+      batch_process('ente_planificador_importar/terminos/fields');
+    }
+    else {
+      // File upload failed.
+      form_set_error('file_import_terms', t('The term file could not be uploaded.'));
+    }
+  }
+}
+
+/**
+ * Implementation of _batch_ente_planificador_importar_term_fields().
+ * display term saved (used in _ente_planificador_importar_terminos_execute)
+ * Batch run callback
+ */
+function _batch_ente_planificador_importar_term_fields($term, &$context) {
+  $parents = taxonomy_get_parents($term['tid']);
+  if ($parents) {
+    $parent = array_shift($parents);
+    $parent = $parent->tid;
+  }
+  else {
+    $parent = 0;
+  }
+  $term['parent'] = $parent;
+  taxonomy_save_term($term);
+
+//watchdog('example', 'taxonomy term <pre>@filename</pre>.', array('@filename' => print_r($term, 1)), WATCHDOG_ERROR);
+
+  $context['message'] = t('Now processing ente: %submission', array('%submission' => $term['name']));
+  $context['results'][] = 'term importado: ' . $term['name'] . '</pre>';
+
+  if ($context['sandbox']['progress'] >= $context['sandbox']['max']) {
+    $context['finished'] = 1;
+  } else {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
+}
+
+/**
+ * Genera las repuestas ajax
+ */
+function ente_planificador_importar_fields_js_util() {
+  $form_state = array('submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  $form = form_get_cache($form_build_id, $form_state);
+
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  // We will run some of the submit handlers so we need to disable redirecting.
+  $form['#redirect'] = FALSE;
+  // We need to process the form, prepare for that by setting a few internals
+  // variables.
+  $form['#post'] = $_POST;
+  $form['#programmed'] = FALSE;
+  $form_state['post'] = $_POST;
+
+  $values = term_fields_get_fields('fields');
+
+  if (isset($_POST['vid'])) {
+    $values = term_fields_get_fields('fields');
+    $i = 0;
+    foreach ($values as $value) {
+      foreach ($value->vids as $key => $vid) {
+        $taxonomy = taxonomy_vocabulary_load($vid['vid']);
+        if ($taxonomy->vid == $_POST['vid']) {
+          $fields["$value->fid"] = t('@title (Valor del Campo n@campo)', array('@title' => $value->title, '@campo' => $i));
+        }
+        $i++;
+      }
+    }
+    $form['fields'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Campos'),
+      '#options' => $fields,
+      '#weight' => 1,
+      '#required' => true,
+    );
+
+    if (count($fields)) {
+      $form['#attributes']['enctype'] = 'multipart/form-data';
+      $form['file_import_terms'] = array(
+        '#title' => t('Archivo (Terminos a importar)'),
+        '#type'  => 'file',
+        '#description' => t('Archivo cvs con el contenido de los terminos a importar'),
+        '#weight' => 2,
+      );
+      $options = array();
+      for ($i = 0;$i < 11; $i++) {
+        if (!$i) {
+          $options[$i] = t('N/A');
+        }
+        else {
+          $options[$i] = t('Fila') . ' ' . $i;
+        }
+      }
+      $form['nombre'] = array(
+        '#type' => 'select',
+        '#title' => t('Nombre del Termino'),
+        '#options' => $options,
+        '#description' => t("La fila donde se encuentra el valor del Campo."),
+        '#required' => TRUE,
+        '#weight' => 3,
+      );
+      $ids = array(
+        'field1' => t('Campo 1'),
+        'field2' => t('Campo 2'),
+        'field3' => t('Campo 3'),
+      );
+      $i = 0;
+      foreach ($ids as $id =>$text) {
+        $i++;
+        $form[$id] = array(
+          '#type' => 'select',
+          '#title' => $text,
+          '#options' => $options,
+          '#weight' => 4 + $i,
+        );
+      }
+      $form['encabezado'] = array(
+        '#title' => 'Primera columna como encabezado',
+        '#type' => 'checkbox',
+        '#return_value' => '1',
+        '#weight' => 9,
+      );
+    }
+  }
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+  // Rebuild the form.
+  $form = form_builder($_POST['form_id'], $form, $form_state);
+  // Render the new output.
+  $new_form = array();
+  $new_form = $form;
+  unset($new_form['#prefix'], $new_form['#suffix']); // Prevent duplicate wrappers.
+  $output = drupal_render($new_form);
+  print drupal_to_js(array('data' => $output, 'status' => true));
+  exit();
+  print '';
+  exit();
+}
+
+/**
+ * Implementation of ente_planificador_importar_terminos_form().
+ * Form to load cvs file in term import
+ */
+function ente_planificador_importar_terminos_form() {
+  $form = array();
+  // If this #attribute is not present, upload will fail on submit
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+  $form['file_import_entes'] = array(
+    '#title' => t('Terminos a importar'),
+    '#type'  => 'file',
+    '#description' => t('Archivo cvs con el contenido de los terminos a importar'),
+  );
+  $vocabularies = taxonomy_get_vocabularies();
+  $vocabulary_options = array();
+  foreach($vocabularies as $vocabulary) {
+    $vocabulary_options[$vocabulary->vid] = $vocabulary->name;
+  }
+  $form['vid'] = array(
+    '#type' => 'select',
+    '#title' => t('Taxonomy'),
+    '#default_value' => !empty($field['vid']) ? $field['vid'] : '',
+    '#options' => $vocabulary_options,
+  );
+  $options = array();
+  for($i = 0;$i < 15; $i++) {
+    if (!$i) {
+      $options[$i] = t('N/A');
+    }
+    else {
+      $options[$i] = t('Fila') . ' ' . $i;
+    }
+  }
+  for ($i=0; $i<=6; $i++) {
+    $form['fieldset_' . $i] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Grupo ') . $i,
+    );
+    $form['fieldset_' . $i]['search_parent_' . $i] = array(
+      '#type' => 'select',
+      '#title' => t('Parent ') . $i,
+      '#options' => $options,
+      '#description' => t("La fila donde se encuentra el parent ") . $i,
+      '#required' => TRUE,
+    );
+    $form['fieldset_' . $i]['nombre_' . $i] = array(
+      '#type' => 'select',
+      '#title' => t('Nombre ') . $i,
+      '#options' => $options,
+      '#description' => t("La fila donde se encuentra el nombre del termino ") . $i,
+      '#required' => TRUE,
+    );
+    $form['fieldset_' . $i]['description_' . $i] = array(
+      '#type' => 'select',
+      '#title' => t('Description ') . $i,
+      '#options' => $options,
+      '#description' => t("La fila donde se encuentra el description del termino ") . $i,
+      '#required' => TRUE,
+    );
+  }
+  /*
+  $ids = array(
+    'code' => t('Código'),
+  );
+  foreach ($ids as $id =>$text) {
+    $form[$id] = array(
+      '#type' => 'select',
+      '#title' => $text,
+      '#options' => $options,
+    );
+  }*/
+  $form['encabezado'] = array(
+    '#title' => 'Primera columna como encabezado',
+    '#type' => 'checkbox',
+    '#return_value' => '1',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+}
+
+/**
+ * Implementation of ente_planificador_importar_terminos_form_submit().
+ * Submit cvs file in term import
+ */
+function ente_planificador_importar_terminos_form_submit($form, &$form_state) {
+  global $user;
+  $validators = array('file_validate_extensions' => array('csv'));
+  // Check for a new uploaded file.
+  $file = file_save_upload('file_import_entes');
+
+  if (isset($file)) {
+    // File upload was attempted.
+    if ($file) {
+      // Put the temporary file in form_values so we can save it on submit.
+      $csv = $file->filepath;
+      $file = fopen($csv, 'r');
+      $time = time();
+      $i = 1;
+      $datas = array();
+      $batch = array(
+        'title' => t('Importing terminos ...', array('@format' => $format)),
+        'operations' => array(),
+        'init_message' => t('Commencing'),
+        'progress_message' => t('Processed @current out of @total.'),
+        'error_message' => t('An error occurred during processing'),
+        'finished' => '_batch_ente_planificador_importar_term_finished',
+      );
+      while (($data = fgetcsv($file)) !== FALSE) {
+        for ($j=0; $j<=6; $j++) {
+          if ($form_state['values']['nombre_' . $j] && $data[$form_state['values']['nombre_' . $j] - 1]) {
+            $term = array(
+              'vid' => $form_state['values']['vid'], // Voacabulary ID
+              'name' => check_plain(trim($data[$form_state['values']['nombre_' . $j] - 1])), // Term Name
+              'description' => check_plain($data[$form_state['values']['description_' . $j] - 1]), // Term description
+              'search_parent' => FALSE,
+              /*'fields' => array(
+                'unidad_codigo1' =>  array(
+                  'value' => check_plain($data[$form_state['values']['code'] - 1]),
+                ),
+              ),*/
+            );
+            if ($form_state['values']['search_parent_' . $j] && $data[$form_state['values']['search_parent_' . $j] - 1]) {
+              $term['search_parent'] = check_plain($data[$form_state['values']['search_parent_' . $j] - 1]);
+              $term['term_parent'] = check_plain($data[$form_state['values']['search_parent_0']]);
+            }
+            if (!($form_state['values']['encabezado'] && $i == 1)) {
+              $batch['operations'][] = array('_batch_ente_planificador_importar_term', array($term));
+            }
+          }
+        }
+        $i++;
+      }
+      batch_set($batch);
+      batch_process('ente_planificador_importar/terminos');
+    }
+    else {
+
+      // File upload failed.
+      form_set_error('file_import_entes', t('The term file could not be uploaded.'));
+    }
+  }
+}
+
+/**
+ * Implementation of _ente_planificador_importar_terminos_execute().
+ * Batch 'execute' callback
+ */
+function _ente_planificador_importar_terminos_execute($execute_id){
+  if ($execute_id && isset($_SESSION['ente_planificador_importar_terminos'][$execute_id]) && is_array($_SESSION['ente_planificador_importar_terminos'][$execute_id])) {
+    $batch = array(
+      'title' => t('Importing terminos ...', array('@format' => $format)),
+      'operations' => array(),
+      'init_message' => t('Commencing'),
+      'progress_message' => t('Processed @current out of @total.'),
+      'error_message' => t('An error occurred during processing'),
+      'finished' => '_batch_ente_planificador_importar_term_finished',
+    );
+    $datas = $_SESSION['ente_planificador_importar_terminos'][$execute_id];
+
+    unset($_SESSION['ente_planificador_importar_terminos'][$execute_id]);
+    $cantidad = count($datas);
+    $i = 1;
+    foreach($datas as $data) {
+      $batch['operations'][] = array('_batch_ente_planificador_importar_term', array($data));
+      $i++;
+    }
+    batch_set($batch);
+    batch_process('ente_planificador_importar/terminos');
+  }
+  else {
+    drupal_set_message(t('Ocurrio un error al intentar importar los entes planificadores'));
+    drupal_goto('ente_planificador_importar/terminos');
+  }
+}
+
+/**
+ * Implementation of _batch_ente_planificador_importar_term_finished().
+ * Batch 'finished' callback
+ */
+function _batch_ente_planificador_importar_term_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we do something meaningful with the results.
+    $message = t('!count_webform terminos processed', array('!count_webform' => count($results)));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+  }
+  drupal_set_message($message);
+}
+
+/**
+ * Implementation of _batch_ente_planificador_importar_term().
+ * display term saved (used in _ente_planificador_importar_terminos_execute)
+ * Batch run callback
+ */
+function _batch_ente_planificador_importar_term($term, &$context) {
+  //not create if exist
+  if ($term['search_parent']) {
+    $db_result = db_query(db_rewrite_sql("SELECT t.tid, t.name FROM {term_data} t WHERE LOWER(t.name) = LOWER('%s') AND vid = %d", 't', 'tid'), trim($term['search_parent']), $term['vid']);
+    $result = array();
+    while ($row = db_fetch_array($db_result)) {
+      if (!empty($row)) {
+        $parents_all = taxonomy_get_parents_all($row['tid']);
+        foreach ($parents_all as $parent) {
+          if ($parent->name == trim($term['search_parent']) && $parents_all[count($parents_all) - 1]->name == trim($term['term_parent'])) {
+            $parents = array('name' => $parent->name, 'tid_parent' => $row['tid']);
+
+            $db_query2 = db_query(db_rewrite_sql("SELECT t.tid, t.name FROM {term_data} t inner join {term_hierarchy} as h on h.tid=t.tid WHERE LOWER(t.name) = LOWER('%s') AND t.vid = %d AND h.parent = %d", 't', 'tid'), trim($term['name']), $term['vid'], $row['tid']);
+            $rows_query = db_fetch_array($db_query2);
+            if (!$rows_query['tid']) {
+              $term['parent'][] = $parents['tid_parent'];
+              taxonomy_save_term($term);
+             }
+           }
+         }
+       }
+     }
+   }
+   else {
+     $db_result = db_query(db_rewrite_sql("SELECT t.tid, t.name FROM {term_data} t INNER JOIN {term_hierarchy} as h ON h.tid=t.tid WHERE LOWER(t.name) = LOWER('%s') AND t.vid = %d AND h.parent = %d", 't', 'tid'), trim($term['name']), $term['vid'], 0);
+     $rows = db_fetch_array($db_result);
+
+     if (!taxonomy_get_term($rows['tid'])) {
+       taxonomy_save_term($term);
+     }
+   }
+
+  $context['message'] = t('Now processing ente: %submission', array('%submission' => $term->name));
+  $context['results'][] = 'term importado: ' . $term->name . '</pre>';
+}
+
+/**
+ * Implementation of ente_planificador_importar_form().
+ * Form to load cvs file in entes import
+ */
+function ente_planificador_importar_form() {
+  $form = array();
+  // If this #attribute is not present, upload will fail on submit
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+  $form['file_import_entes'] = array(
+    '#title' => t('Entes a importar'),
+    '#type'  => 'file',
+    '#description' => t('Archivo cvs con el contenido de los entes planificadores a importar'),
+  );
+  $options = array();
+  for($i = 0;$i < 30; $i++) {
+    if (!$i) {
+      $options[$i] = t('N/A');
+    }
+    else {
+      $options[$i] = t('Fila') . ' ' . $i;
+    }
+  }
+  $form['titulo'] = array(
+    '#type' => 'select',
+    '#title' => t('Titulo'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el nombre del ente."),
+    '#required' => TRUE,
+  );
+  $form['level'] = array(
+    '#type' => 'select',
+    '#title' => t('Nivel'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el nivel de jerarquia del ente."),
+    '#required' => TRUE,
+  );
+  $form['father'] = array(
+    '#type' => 'select',
+    '#title' => t('Ente padre'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el ente padre del ente."),
+    '#required' => TRUE,
+  );
+  $form['sector'] = array(
+    '#type' => 'select',
+    '#title' => t('Sector'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el sector del ente."),
+  );
+  $form['acronimo'] = array(
+    '#type' => 'select',
+    '#title' => t('Acrónimo'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el acrónimo del ente."),
+  );
+  $node_type = content_types('ente_planificador');
+  $fields = $node_type['fields'];
+  $campos = array();
+  if (count($fields)) {
+    $form['campos'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('campos'),
+    );
+    foreach($fields as $field_id => $field) {
+      $campos[$field_id] =  $field;
+      $form['campos'][$field_id] = array(
+        '#type' => 'select',
+        '#title' => $field['widget']['label'],
+        '#options' => $options,
+        '#description' => t("La fila donde se encuentra el campo del ente."),
+      );
+    }
+  }
+  $form['encabezado'] = array(
+    '#title' => 'Primera columna como encabezado',
+    '#type' => 'checkbox',
+    '#return_value' => '1',
+  );
+  $form['#ente_fields'] = $campos;
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+}
+
+/**
+ * Implementation of ente_planificador_importar_form_submit().
+ * Submit cvs file in entes import
+ */
+function ente_planificador_importar_form_submit($form, &$form_state) {
+  global $user;
+  $validators = array('file_validate_extensions' => array('csv'));
+  // Check for a new uploaded file.
+  $file = file_save_upload('file_import_entes', $validators);
+  if (isset($file)) {
+    // File upload was attempted.
+    if ($file) {
+      // Put the temporary file in form_values so we can save it on submit.
+      $csv = $file->filepath;
+      $file = fopen($csv, 'r');
+      $time = time();
+      $i = 1;
+      $batch = array(
+        'title' => t('Importing entes planificadores ...', array('@format' => $format)),
+        'operations' => array(),
+        'init_message' => t('Commencing'),
+        'progress_message' => t('Processed @current out of @total.'),
+        'error_message' => t('An error occurred during processing'),
+        'finished' => '_batch_ente_planificador_importar_finished',
+      );
+      while (($data = fgetcsv($file)) !== FALSE) {
+        $ente = new stdClass();
+        if ($form_state['values']['encabezado'])
+        $ente->type = 'ente_planificador';
+        $ente->title = check_plain($data[$form_state['values']['titulo'] - 1]);
+        $ente->father = $data[$form_state['values']['father'] - 1];
+        if ($data[$form_state['values']['sector']] -1) {
+          $ente->sector_social = $data[$form_state['values']['sector'] - 1];
+        }
+        if ($data[$form_state['values']['acronimo']] -1) {
+          $ente->import_acronimo = check_plain($data[$form_state['values']['acronimo'] - 1]);
+        }
+        //se agregan los campos
+        if (count($form['#ente_fields'])) {
+          foreach($form['#ente_fields'] as $field_id => $field) {
+            if ($data[$form_state['values'][$field_id]]) {
+              $tipo = 'value';
+              if ($field['type'] == 'nodereference') {
+                $tipo = 'nid';
+              }
+              if ($field['type'] == 'userreference') {
+                $tipo = 'uid';
+              }
+              if ($field['type'] == 'email') {
+                $tipo = 'email';
+              }
+              if ($field['type'] == 'link') {
+                $tipo = 'link';
+              }
+              if ($field['type'] == 'content_taxonomy') {
+                $tipo = 'content_taxonomy';
+              }
+              $ente->{$field_id}[0][$tipo] = check_plain($data[$form_state['values'][$field_id] - 1]);
+            }
+          }
+        }
+        $ente->status = 1;
+        $ente->tipo = $data[$form_state['values']['level']];
+        $ente->promote = 0;
+        $ente->promote = 0;
+        $ente->sticky = 0;
+        $ente->uid = $user->uid;
+        $ente->revision = 1;
+        $texto = t('Agregado el ente @nombre_ente', array('@nombre_ente' => $ente->title));
+        $ente->log = $texto;
+        if (!($form_state['values']['encabezado'] && $i == 1)) {
+          $batch['operations'][] = array('_batch_ente_planificador_importar', array($ente));
+          $datas[] = $ente;
+        }
+        $i++;
+      }
+      batch_set($batch);
+      batch_process('ente_planificador_importar/entes');
+    }
+    else {
+
+      // File upload failed.
+      form_set_error('file_import_entes', t('The entes file could not be uploaded.'));
+    }
+  }
+}
+
+/**
+ * Implementation of _ente_planificador_importar_execute().
+ * Batch 'execute' callback
+ */
+function _ente_planificador_importar_execute($execute_id){
+  if ($execute_id && isset($_SESSION['ente_planificador_importar'][$execute_id]) && is_array($_SESSION['ente_planificador_importar'][$execute_id])) {
+    $batch = array(
+      'title' => t('Importing entes planificadores ...', array('@format' => $format)),
+      'operations' => array(),
+      'init_message' => t('Commencing'),
+      'progress_message' => t('Processed @current out of @total.'),
+      'error_message' => t('An error occurred during processing'),
+      'finished' => '_batch_ente_planificador_importar_finished',
+    );
+    $datas = $_SESSION['ente_planificador_importar'][$execute_id];
+
+    unset($_SESSION['ente_planificador_importar'][$execute_id]);
+    $cantidad = count($datas);
+    $i = 1;
+    foreach($datas as $data) {
+      $batch['operations'][] = array('_batch_ente_planificador_importar', array($data));
+    }
+    batch_set($batch);
+    batch_process('ente_planificador_importar');
+  }
+  else {
+    drupal_set_message(t('Ocurrio un error al intentar importar los entes planificadores'));
+    drupal_goto('ente_planificador_importar');
+  }
+}
+
+/**
+ * Implementation of _ente_planificador_importar_usuarios().
+ * Obtiene la cantidad de usuarios por tipo de ente
+ */
+function _ente_planificador_importar_usuarios($tipo = 0) {
+  $cant_usuarios = array();
+  $cant_usuarios[1] = array(
+    'for' => 0,
+    'enl' => 5,
+    'sup' => 5,
+  );
+  $cant_usuarios[2] = array(
+    'for' => 0,
+    'enl' => 3,
+    'sup' => 3,
+  );
+  $cant_usuarios[3] = array(
+    'for' => 10,
+    'enl' => 2,
+    'sup' => 1,
+  );
+  $cant_usuarios[4] = array(
+    'for' => 3,
+    'enl' => 0,
+    'sup' => 1,
+  );
+  return $cant_usuarios[$tipo];
+}
+
+/**
+ * Implementation of _batch_ente_planificador_importar().
+ * Save entes (used in _ente_planificador_importar_execute)
+ * Batch run callback
+ */
+function _batch_ente_planificador_importar($ente, &$context) {
+  $father = $ente->father;
+  //Se consulta la jerarquia del ente padre
+  $desc = _ente_planificador_hierarchical_get_descbyacronimo($ente->father);
+  $count = count($desc);
+  if ($count) {
+    foreach($desc as $idfathers) {
+      if ($idfathers['father']) {
+        $parent = taxonomy_get_parents($ente->sector_social);
+        $ente->sector = $ente->sector_social;
+        $ente->ambito = key($parent);
+        $ente->ente_planificador_hierarchical[$idfathers['level']] = $idfathers['father'];
+        $ente->{'ente_planificador_hierarchical_father_' . $idfathers['level']} = $idfathers['father'];
+      }
+      else {
+        $ente->ente_planificador_hierarchical[$idfathers['level']] = $idfathers['nid'];
+        $ente->{'ente_planificador_hierarchical_father_' . $idfathers['level']} = $idfathers['nid'];
+      }
+    }
+    $ente->{'ente_planificador_hierarchical_father_' . ($count + 1)} = 0;
+  }
+  $level = count($ente->ente_planificador_hierarchical[$idfathers['level']]);
+  if ($level) {
+    $level++;
+    //Se ajusta el nivel
+    if ($ente->tipo != $level) {
+      $ente->tipo = $level;
+    }
+    $acronimo = isset($ente->import_acronimo)? $ente->import_acronimo : 0;
+    $ente->sector = isset($ente->sector_social)? $ente->sector_social : 0;
+    node_save($ente);
+    $falla = $ente->nid ? '' : 'FALLA';
+    //insert sector
+
+    $context['results'][] = 'ente importado: <pre>' . print_r($ente, 1) . $falla . '</pre>';
+    if ($ente && $ente->nid) {
+      //Se ingresa el acronimo si existe
+      if ($acronimo) {
+        db_query("UPDATE {ente_planificador_hierarchical} SET acronimo = '%s' WHERE nid = %d", $acronimo, $ente->nid);
+      }
+      else {
+        $acronimo = 'ente_' . $acronimo;
+      }
+      //se crean los usuarios segun el tipo
+      $roles_type = _ente_planificador_hierarchical_get_roles_type($ente->tipo);
+      $cant_usuarios = _ente_planificador_importar_usuarios($ente->tipo);
+      foreach ($roles_type as $rol => $text) {
+        $array = array();
+        $array['roles'] = array();
+        $array['roles'][DRUPAL_AUTHENTICATED_RID] = DRUPAL_AUTHENTICATED_RID;
+        $rol_tipo = variable_get('ente_planificador_hierarchical_rol_' . $rol . '_' . $ente->tipo, 2);
+        //existe el rol para el usuario
+        if ($rol_tipo && $cant_usuarios[$rol]) {
+          for ($i = 0; $i < $cant_usuarios[$rol]; $i++) {
+            $array['roles'][$rol_tipo] = $rol_tipo;
+            $array['name'] = $acronimo . '_' . $rol . '_' . ($i + 1);
+            $array['pass'] = $acronimo . '_' . $rol . '_' . ($i + 1);
+            $array['mail'] = $rol . '_' . ($i + 1) . '@' . 'ente_' . $acronimo . '.com';
+            $array['status'] = 1;
+            $array['entes'] = $ente->nid;
+            user_save(NULL, $array);
+          }
+        }
+      }
+    }
+  }
+  $context['message'] = t('Now processing ente: %submission', array('%submission' => $ente->title));
+}
+
+/**
+ * Implementation of _batch_ente_planificador_importar_finished().
+ * Batch 'finished' callback
+ */
+function _batch_ente_planificador_importar_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we do something meaningful with the results.
+    $message = t('!count_webform entes processed', array('!count_webform' => print_r($results, TRUE)));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+  }
+  drupal_set_message($message);
+}
+
+/**
+ * Implementation of _ente_planificador_hierarchical_get_descbyacronimo().
+ * Obtiene los padres de un ente por el acronimo o nombre
+ */
+function _ente_planificador_hierarchical_get_descbyacronimo($acronimo = '') {
+  $fathers = array();
+  //get fathers
+  if ($acronimo) {
+    //Se verifica que el arconimo exista
+    $query = db_query("SELECT * FROM {ente_planificador_hierarchical} WHERE acronimo = '%s'", $acronimo);
+    $father_acronimo = db_fetch_object($query);
+    if (!$father_acronimo || !$father_acronimo->acronimo) {
+      $query = db_query("SELECT h.* FROM {node} AS n INNER JOIN {ente_planificador_hierarchical} AS h ON h.nid = n.nid WHERE n.title = '%s'", $acronimo);
+      $father_acronimo = db_fetch_object($query);
+    }
+    if ($father_acronimo && $father_acronimo->nid) {
+      $query = db_query('SELECT * FROM {ente_planificador_hierarchical} WHERE nid = %d', $father_acronimo->nid);
+      while ($father = db_fetch_object($query)) {
+        $fathers[] = array(
+          'title' => $father->title,
+          'nid' =>  $father->nid,
+          'father' =>  $father->father,
+          'level' =>  $father->level,
+          'title' => $father->acronimo,
+        );
+      }
+    }
+  }
+  return $fathers;
+}
+
+
+/**
+ * Implementation of ente_planificador_importar_aprobar_proyectos_form().
+ * Form to load cvs file and setting in proyectos estate update
+ */
+function ente_planificador_importar_aprobar_proyectos_form() {
+  $form = array();
+  // If this #attribute is not present, upload will fail on submit
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+  $form['file_import_proyectos'] = array(
+    '#title' => t('Proyectos a aprobar'),
+    '#type'  => 'file',
+    '#description' => t('Archivo cvs con el contenido de los proyectos a aprobar'),
+  );
+  $options = array();
+  for($i = 0;$i < 11; $i++) {
+    if (!$i) {
+      $options[$i] = t('N/A');
+    }
+    else {
+      $options[$i] = t('Fila') . ' ' . $i;
+    }
+  }
+  $form['sipes'] = array(
+    '#type' => 'select',
+    '#title' => t('Código SIPES del proyecto'),
+    '#options' => $options,
+    '#description' => t("La fila donde se encuentra el código SIPES del proyecto."),
+    '#required' => TRUE,
+  );
+  $estados = _proyectos_operativos_reformula_obtiene_estados();
+  $form['workflow'] = array(
+    '#type' => 'select',
+    '#title' => t('Nuevo estado del proyecto'),
+    '#options' => $estados['states'],
+    '#description' => t("Seleccione el nuevo estado que se colocara a los proyectos contenidos en el archivo de importación."),
+    '#required' => TRUE,
+  );
+  $form['encabezado'] = array(
+    '#title' => 'Primera columna como encabezado',
+    '#type' => 'checkbox',
+    '#return_value' => '1',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+}
+
+
+/**
+ * Implementation of ente_planificador_importar_aprobar_proyectos_form_submit().
+ * Submit cvs file in proyectos estate update
+ */
+function ente_planificador_importar_aprobar_proyectos_form_submit($form, &$form_state) {
+  global $user;
+  $validators = array('file_validate_extensions' => array('csv'));
+  // Check for a new uploaded file.
+  $file = file_save_upload('file_import_proyectos', $validators);
+  if (isset($file)) {
+    // File upload was attempted.
+    if ($file) {
+      // Put the temporary file in form_values so we can save it on submit.
+      $csv = $file->filepath;
+      $file = fopen($csv, 'r');
+      $time = time();
+      $i = 1;
+      $datas = array();
+      $batch = array(
+        'title' => t('Importing proyectos ...', array('@format' => $format)),
+        'operations' => array(),
+        'init_message' => t('Commencing'),
+        'progress_message' => t('Processed @current out of @total.'),
+        'error_message' => t('An error occurred during processing'),
+        'finished' => '_batch_proyecto_operativo_cambiar_estado_importar_finished',
+      );
+      while (($data = fgetcsv($file)) !== FALSE) {
+        $sipes = check_plain($data[$form_state['values']['sipes'] - 1]);
+        if ($sipes != '') {
+          $proyecto = array(
+            'sipes' => $sipes, // codigo sipes
+            'workflow' => $form_state['values']['workflow'], // workflow
+            'workflows' => $form['workflow']['#options'], // workflow options
+          );
+          if (!($form_state['values']['encabezado'] && $i == 1)) {
+            $batch['operations'][] = array('_batch_proyecto_operativo_cambiar_estado_importar', array($proyecto));
+          }
+          $i++;
+        }
+      }
+      batch_set($batch);
+      batch_process('ente_planificador_importar/estadoproyecto');
+    }
+    else {
+
+      // File upload failed.
+      form_set_error('file_import_proyectos', t('The proyectos file could not be uploaded.'));
+    }
+  }
+}
+
+
+/**
+ * Implementation of _batch_proyecto_operativo_cambiar_estado_importar().
+ * Update state proyectos (used in ente_planificador_importar_aprobar_proyectos_form_submit)
+ * Batch run callback
+ */
+function _batch_proyecto_operativo_cambiar_estado_importar($proyecto, &$context) {
+  $context['message'] = t('Now processing proyecto: %submission', array('%submission' => check_plain($proyecto['sipes'])));
+  $query = db_query("SELECT nid FROM {node} WHERE title = '%s'", $proyecto['sipes']);
+  $proyecto_nid = db_fetch_object($query);
+  if ($proyecto_nid && $proyecto_nid->nid) {
+    $node = node_load($proyecto_nid->nid);
+    if ($node->nid) {
+      if ($node->_workflow != $proyecto['workflow']) {
+        $context['results'][] = t('Actualizado el proyecto @proyecto desde el estado @ant al @prox ', array('@proyecto' => $proyecto['sipes'], '@ant' => $proyecto['workflows'][$node->_workflow], '@prox' => $proyecto['workflows'][$proyecto['workflow']]));
+        $node->_workflow = $proyecto['workflow'];
+        $node->revision = 1;
+        $texto = t('Se cambio el proyecto @nombre del estado @estado al @estado_next', array('@nombre' => $node->title, '@estado' => $proyecto['workflows'][$node->_workflow], '@estado_next' => $proyecto['workflows'][$proyecto['workflow']]));
+        $node->log = $texto;
+        $node->_workflow = $proyecto['workflow'];
+        node_save($node);
+      }
+      else {
+        $context['results'][] = t('El proyecto @proyecto ya se encuentra en el estado @prox ', array('@proyecto' => $proyecto['sipes'], '@prox' => $proyecto['workflows'][$proyecto['workflow']]));
+      }
+    }
+    else {
+      $context['results'][] = t('No se encontro el proyecto @proyecto', array('@proyecto' => $proyecto['sipes']));
+    }
+  }
+  else {
+    $context['results'][] = t('No se encontro el proyecto @proyecto', array('@proyecto' => $proyecto['sipes']));
+  }
+}
+
+/**
+ * Implementation of _batch_ente_planificador_importar_finished().
+ * Batch 'finished' callback
+ */
+function _batch_proyecto_operativo_cambiar_estado_importar_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we do something meaningful with the results.
+    $message = t('!count_webform entes processed', array('!count_webform' => '<pre>' . print_r($results, TRUE) . '</pre>'));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+  }
+  drupal_set_message($message);
+}

@@ -1106,7 +1106,10 @@ function _sipp_pdf_datosfichaview($node) {
       line-height: 5px;
     }
     div.field-field-accion-esp-fechai + div.field-label {
-      line-height: 7px;
+      line-height: 1px;
+    }
+    div.field-field-accion-esp-fechai + div.field-items {
+      line-height: 1px;
     }
     div.field-field-accion-esp-fechaf + div.field-label {
       line-height: 7px;
@@ -1147,8 +1150,32 @@ function _sipp_pdf_datosfichaview($node) {
       line-height: 10px;
     }
     div.siete {
-      line-height: 15px;
+      line-height: 13px;
     }
+    div.field-field-accion-esp-longitud + div.field-label {
+      line-height: 7px;
+    }
+        div.field-field-accion-esp-longitud + div.field-items {
+      line-height: 7px;
+    }
+    .lineage-0 {
+      line-height: 5px;
+    }
+    .lineage-1 {
+      line-height: 5px;
+    }
+    div.field-field-accion-esp-fechai + div.field-label{
+      line-height: 7px;
+    }
+
+
+    .sticky-enabled sticky-table{
+      width: 100%;
+      //border-collapse: collapse;
+    }
+
+
+
 
 
   </style>';
@@ -1192,6 +1219,84 @@ function _sipp_pdf_datosaeview($ae) {
    div {
     line-height: 4px; 
    }
+
+
+    div.field-field-accion-esp-fechai + div.field-label {
+      line-height: 0.1em;
+    }
+
+   div.field-field-accion-esp-fechai + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
+
+    div.field-field-accion-esp-fechaf + div.field-label {
+      line-height: 0.1px;
+    }
+
+   div.field-field-accion-esp-fechaf + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
+
+    div.field-field-accion-esp-ejecutor + div.field-label {
+      line-height: 0.1px;
+    }
+
+   div.field-field-accion-esp-ejecutor + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
+          div.field-field-accion-esp-bien + div.field-label {
+      line-height: 0.1px;
+    }
+
+
+
+          div.field-field-accion-esp-unidadm + div.field-label {
+      line-height: 0.1px;
+    }
+
+   div.field-field-accion-esp-unidadm + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
+
+       div.field-field-accion-esp-ponderacion + div.field-label {
+      line-height: 0.1px;
+    }
+
+   div.field-field-accion-esp-ponderacion + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
+
+       div.field-field-accion-esp-monto-finan + div.field-label {
+      line-height: 0.1px;
+    }
+
+   div.field-field-accion-esp-monto-finan + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
+
+          div.field-field-accion-esp-total-fuent + div.field-label {
+      line-height: 0.1px;
+    }
+
+   div.field-field-accion-esp-total-fuent + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
+
+          div.field-field-accion-esp-localizacion + div.field-label {
+      line-height: 0.1px;
+    }
+
+   div.field-field-accion-esp-localizacion + div.field-items + div.odd {
+      line-height: 0.1px;
+   }
+
   </style>';
   $html .= node_view($ae);
   if ($pdf) {

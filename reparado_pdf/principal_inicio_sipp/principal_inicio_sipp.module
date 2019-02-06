@@ -138,6 +138,7 @@ function menu_principal_inicio_page() {
     }
 
     //SIPES
+    /*
     $situacion_actual_preliminar = module_exists('situacion_actual_preliminar');
     $politicas_direccionales = module_exists('politicas_direccionales');
     if ($situacion_actual_preliminar || $politicas_direccionales) {
@@ -166,7 +167,7 @@ function menu_principal_inicio_page() {
         $page_content .= '</tr></table></h1>';
         $page_content .= '<br><br>';
     }
-  }
+  }*/
 
     //***********************************************************************************************
     //SIPP
@@ -178,6 +179,9 @@ function menu_principal_inicio_page() {
     $page_content .= "<td width=\"50%\" align=\"center\">".l($image_tag, 'proyectos_operativos', array('html'=>TRUE))."</td>";
     $image_tag = theme_image($path_modulo_menu_principal.'/img/accionescentralizadas.png').'<br>'.'<b>'.t('Acciones Centralizadas').'</b>';
     $page_content .= "<td width=\"50%\" align=\"center\">".l($image_tag, 'acciones_centralizadas', array('html'=>TRUE))."</td>";
+
+    $image_tag = theme_image($path_modulo_menu_principal.'/img/menu/conf_acc_centralizadas_c1.png').'<br>'.'<b>'.t('Sistema Nacional de Registro y Seguimiento de Proyectos de Inversión Pública').'</b>';
+    $page_content .= "<td  align=\"center\">".l($image_tag, 'http://snip.mppp.gob.ve', array('html'=>TRUE, 'attributes' => array('target' => '_blank')))."</td>";
 
     $page_content .= '</tr></table></h1>';
     $page_content .= '<br><br>';

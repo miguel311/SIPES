@@ -134,7 +134,8 @@ function proyectos_operativos_nodeapi(&$node, $op, $teaser = NULL, $page = NULL)
   switch ($op) {
     case 'insert':
       if ($node->type == 'proyectos_operativos') {
-        $year = variable_get('proyectos_operativos_anho_creacion', 0) ? variable_get('proyectos_operativos_anho_creacion', 0) : date("Y");
+       $year = $node && property_exists($node, 'anhoproyectos_operativos') && $node->anhoproyectos_operativos? $node->anhoproyectos_operativos : variable_get('proyectos_operativos_anho_creacion', 0);
+        $year = $year? $year : date("Y");
         db_query('INSERT INTO {proyectos_operativos} (nid, year, ente) VALUES (%d, %d, %d)', $node->nid, $year, $node->field_proyecto_ente[0]['nid']);
       }
     break;
@@ -273,7 +274,7 @@ function proyectos_operativos_nodeapi(&$node, $op, $teaser = NULL, $page = NULL)
           }
         }
         $output = '';
-      //  $output .= '<fieldset><legend>' . t('Distribución por Partidas Presupuestarias (Bs.)') . '</legend>';
+        $output .= '<div class="uno"><h4>' . t('Distribución por Partidas Presupuestarias (Bs.)') . '</h4>';
         $header = array();
         $header[] = array('data' => t('Partidas'));
         foreach($ftypes as $id_field => $texto) {
@@ -320,7 +321,7 @@ function proyectos_operativos_nodeapi(&$node, $op, $teaser = NULL, $page = NULL)
         $row[] = array('data' => '<b>' . number_format($totalT, $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']) . '</b>', );
         $rows[] = $row;
         $output .= theme('table', $header, $rows);
-        //$output .= '</fieldset>';
+        $output .= '</div>';
         $node->content['accion_especifica_partidas_reformulado'] = array(
           '#value' => $output,
           '#weight' => 101,
@@ -341,7 +342,7 @@ function proyectos_operativos_nodeapi(&$node, $op, $teaser = NULL, $page = NULL)
         foreach($arreglo_financiamiento as $id_items => $titulo) {
           if (variable_get('enable_' . $id_items, false)) {
             $sumal = 0; 
-            $output1 = '<fieldset><legend>' . $titulo . '</legend>';
+            $output1 = '<div><h3>' . $titulo . '</h3>';
             foreach($arreglo_financiamiento_fields[$id_items] as $id1) {
               if ($id1) {
                 $field = content_fields($id1, 'accion_especifica');
@@ -354,10 +355,10 @@ function proyectos_operativos_nodeapi(&$node, $op, $teaser = NULL, $page = NULL)
                 $field = content_fields($id1, 'accion_especifica');
                 $sumal += $min; 
                 $sumalT += $min; 
-                $output1 .= '<div class="field"><div class="field-label">' . $field['widget']['label'] . ':</div>' . '<div class="field-label-planificado">' . number_format($min, $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']) . '</div>' . '</div>';
+                $output1 .= '<div class="field cinco"><span class="tres">' . $field['widget']['label'] . ':</div>' . '<div class="cuatro">' . number_format($min, $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']) . '</span>' . '</div>';
               }
             }
-            $output1 .= '</fieldset>';
+            $output1 .= '</div>';
             $row[] = array('data' => $output1, );
             //$row1[] = array('data' => '<b>' . t('SUBTOTAL ')  . ':</b>', 'colspan' => 2, 'align' => 'right');
             $row1[] = array('data' => '<b>' . t('SUBTOTAL ')  . ':</b> ' . number_format($sumal, $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']), 'align' => 'center');
@@ -370,7 +371,7 @@ function proyectos_operativos_nodeapi(&$node, $op, $teaser = NULL, $page = NULL)
         $row[] = array('data' => '<b>' . t('TOTAL FUENTES DE FINANCIAMIENTO') . ':</b> ' . '<b>' . number_format($sumalT, $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']) . '</b>', 'colspan' => ($cantifuentes), 'align' => 'center');
         //$row[] = array('data' => '<b>' . number_format($sumalT, $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']) . '</b>', );
         $rows[] = $row;
-        $output .= '<fieldset><legend>' . t('Distribución por fuentes de Financiamiento (Bs.)') . '</legend>' . theme('table', array(), $rows) . '</fieldset>';
+        $output .= '<div class="dos"><h4>' . t('Distribución por fuentes de Financiamiento (Bs.)') . '</h4>' . theme('table', array(), $rows) . '</div>';
         $node->content['accion_especifica_fuentesfinanc_reformulado'] = array(
           '#value' => $output,
           '#weight' => 102,
@@ -583,14 +584,8 @@ function _proyectos_operativos_edita_datos_agregar($enteagregar = 0) {
  */
 function _proyectos_operativos_access_editar($node) {
   global $user;
-/*  if (module_exists('workflow')) {
-    $estado_aprobado = variable_get('proyectos_operativos_state_aprobado', NULL);
-    $estado_naprobado = variable_get('proyectos_operativos_state_naprobado', NULL);
-    if ($node->_workflow == $estado_aprobado || $node->_workflow == $estado_naprobado) {
-      return FALSE;
-    }
-  }*/
-  if ($node->anhoproyectos_operativos != variable_get('proyectos_operativos_anho_creacion', 0)) {
+  $years = variable_get('proyectos_operativos_anho_edit', 0);
+  if (!isset($years[$node->anhoproyectos_operativos]) || !$years[$node->anhoproyectos_operativos]) {
     return FALSE;
   }
   $ente_planificador = ente_planificador_leer_ente_planificadores($node->field_proyecto_ente[0]['nid']);
@@ -675,7 +670,12 @@ function proyectos_operativos_menu() {
     'title' => t('Consultar Proyectos Operativos'),
     'page callback' => 'proyectos_operativos_search_ac_display',
     'access arguments' => array('ver planificador'),
-    'type' => MENU_NORMAL_ITEM,
+    'type' => MENU_CALLBACK,
+  );
+  $items['proyectos_operativos/ver'] = array(
+    'title' =>  t('Proyectos Operativos'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10
   );
   //editar proyectos operativos (basicos)
   $items['proyectosopedit/%proyectosop'] = array(
@@ -3125,7 +3125,8 @@ function proyectos_operativos_proyecto_basico_form(&$form_state, $proyecto = 0, 
   $node_type = content_types('proyectos_operativos');
   $fields = $node_type['fields'];
   $form['#proyecto_fields'] = $fields;
-  $form['#proyecto_anho'] = ($proyecto->nid) ? $proyecto->anhoproyectos_operativos : variable_get('proyectos_operativos_anho_creacion', 0) ? variable_get('proyectos_operativos_anho_creacion', 0) : date("Y");
+  $anho = $proyecto && property_exists($proyecto, anhoproyectos_operativos) && $proyecto->anhoproyectos_operativos? $proyecto->anhoproyectos_operativos : variable_get('proyectos_operativos_anho_creacion', 0);
+  $form['#proyecto_anho'] = $anho? $anho : date("Y");
   $field_form = array();
   $fields_form = array();
   $fields_form_ac_d = array();
@@ -3142,6 +3143,15 @@ function proyectos_operativos_proyecto_basico_form(&$form_state, $proyecto = 0, 
     'field_proyecto_monto_prox' => 'field_proyecto_monto_prox',
     'field_proyecto_total' => 'field_proyecto_total',
     'field_proyecto_poan' => 'field_proyecto_poan',
+    'field_proyecto_causas' => 'field_proyecto_causas',
+    'field_proyecto_problemas' => 'field_proyecto_problemas',
+    'field_proyecto_justificacion' => 'field_proyecto_justificacion',
+    'field_proyecto_alcance' => 'field_proyecto_alcance',
+    //update 6000
+    'field_lineas_estrategicas' => 'field_lineas_estrategicas',
+    'field_poli_ministeriales' => 'field_poli_ministeriales',
+    'field_proyectos_programas' => 'field_proyectos_programas',
+    'field_montos_otras_moneds' => 'field_montos_otras_moneds',
   );
   if (is_array($fields) && count($fields)) {
     foreach($fields as $field_id => $field) {
@@ -3460,6 +3470,16 @@ function proyectos_operativos_proyecto_basico_form_submit($form, &$form_state) {
     $texto = t('Modificados los datos básicos del proyecto');
     $node_load->log = $texto;
     drupal_set_message($texto);
+    if (!$node_load->field_proyecto_codigo[0]['value'] && is_numeric($node_load->title)) {
+      $node_load->field_proyecto_codigo = array(array('value' => $node_load->title));
+    }
+    else if (!$node_load->field_proyecto_codigo[0]['value'] && !is_numeric($node_load->title)) {
+      $zerofill = 5;
+      $num = db_result(db_query("SELECT id FROM {proyectos_operativos} WHERE nid = %d", $node_load->nid));
+      $codigo = str_pad($num, $zerofill, '0', STR_PAD_LEFT);
+      $node_load->field_proyecto_codigo = array(array('value' => $codigo));
+      $node_load->title = $codigo;
+    }
   }
   else {
     $nuevo_codigo = 1;
@@ -3539,6 +3559,7 @@ function proyectos_operativos_proyecto_generales_form(&$form_state, $proyecto = 
   if (!$proyecto) {
     $proyecto_leido = new stdClass();
     $proyecto_leido->type = 'proyectos_operativos';
+    $proyecto_leido->anhoproyectos_operativos = variable_get('proyectos_operativos_anho_creacion', 0);
   }
   else {
     $proyecto_leido = $proyecto;
@@ -3600,7 +3621,7 @@ function proyectos_operativos_proyecto_generales_form(&$form_state, $proyecto = 
   $node_type = content_types('proyectos_operativos');
   $fields = $node_type['fields'];
   $form['#proyecto_fields'] = $fields;
-  $form['#proyecto_anho'] = variable_get('proyectos_operativos_anho_creacion', 0) ? variable_get('proyectos_operativos_anho_creacion', 0) : date("Y");
+  $form['#proyecto_anho'] = $proyecto_leido->anhoproyectos_operativos;
   $field_form = array();
   $fields_form = array();
   $fields_extra_form = array();
@@ -4258,6 +4279,7 @@ function proyectos_operativos_proyecto_indicadores_form(&$form_state, $proyecto 
   $fields = $node_type['fields'];
   $field_form = array();
   $fields_form = array();
+  /*
   if (variable_get('proyectos_operativos_muestra_enunciado_problema', TRUE)) {
     $arreglo = array(
       'field_proyecto_causas' => 'field_proyecto_causas',
@@ -4288,6 +4310,8 @@ function proyectos_operativos_proyecto_indicadores_form(&$form_state, $proyecto 
       }
     }
   }
+  */
+  /*
   if (variable_get('proyectos_operativos_muestra_justicacion', TRUE)) {
     $field_form = array();
     $arreglo = array(
@@ -4317,6 +4341,8 @@ function proyectos_operativos_proyecto_indicadores_form(&$form_state, $proyecto 
       }
     }
   }
+  */
+  /*
   if (variable_get('proyectos_operativos_muestra_alcance', TRUE)) {
     $field_form = array();
     $arreglo = array(
@@ -4346,6 +4372,7 @@ function proyectos_operativos_proyecto_indicadores_form(&$form_state, $proyecto 
       }
     }
   }
+  */
   $sa = variable_get('proyectos_operativos_muestra_sa', TRUE);
   $so = variable_get('proyectos_operativos_muestra_so', TRUE);
   if ($sa || $so) {

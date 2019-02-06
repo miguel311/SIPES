@@ -21,7 +21,6 @@
   *
   * @author Cenditel Merida - Msc. Juan Vizcarrondo
   * @date 2013-08-02 // (a&#241;o-mes-dia)
-  * @Modificado por: Tsu. Miguel Narvaez @date 2018-10-15.
   * @version 0.1 // (0.1)
   */
 
@@ -45,6 +44,7 @@
     'field_proyecto_monto_ant' => 'field_proyecto_monto_ant',
     'field_proyecto_monto_prox' => 'field_proyecto_monto_prox',
     'field_proyecto_esp_monto_finan' => 'field_proyecto_esp_monto_finan',
+    'field_montos_otras_moneds' => 'field_montos_otras_moneds',
     'field_proyecto_poan' => 'field_proyecto_poan',
     'field_proyecto_pndes' => 'field_proyecto_pndes',
     'field_proyecto_mcti' => 'field_proyecto_mcti',
@@ -83,7 +83,7 @@
   $mcti = variable_get('proyectos_operativos_muestra_mcti', TRUE);
   $sa = variable_get('proyectos_operativos_muestra_sa', TRUE);
   $so = variable_get('proyectos_operativos_muestra_so', TRUE);
-  $unidad_m = property_exists ($proyecto, 'variaciones') && is_array($proyecto->variaciones) && count($proyecto->variaciones) ? 'proyectos_operativos_unidad_medida_reformulado' : 'field_proyecto_unidadm';
+  $unidad_m = module_exists('proyectos_reformulacion') ? 'proyectos_operativos_unidad_medida_reformulado' : 'field_proyecto_unidadm';
   $meta = module_exists('proyectos_reformulacion') ? 'proyectos_operativos_meta_fisica_reformulado' : 'field_proyecto_meta_fisica';
 //$result  =  preg_replace('/(<div.*?class="field-label"[^>]*>)(.*?)(<\/div>)/i', "<b>$1:</b>$3", $content->content[$campo]);
 ?>
@@ -249,20 +249,30 @@
   <!-- end Responsable administrador -->
 <?php endif ?>
 
+<!-- PNDS -->
+<tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_pndes']['field']['#title'];?>:</b>&nbsp;</td></tr>
+
 <?php
- if (($pndes || $mcti)):  ?>
-  <tr><td colspan="2" align="center" ><h3><? print t('Área Estrategica');?></h3></td></tr>
-  <?php if ($pndes): ?>
-    <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_pndes']['field']['#title'];?>:</b>&nbsp;</td></tr>
-    <tr><td colspan="2" align="center"><?php print strip_tags(drupal_render($content->content['field_proyecto_pndes']));?>&nbsp;</td></tr>
-  <?php endif ?>
-  <?php if ($mcti): ?>
-    <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_mcti']['field']['#title'];?>:</b>&nbsp;</td></tr>
-    <tr><td colspan="2" align="center"><?php print strip_tags(drupal_render($content->content['field_proyecto_mcti']));?>&nbsp;</td></tr>
-  <?php endif ?>
-<?php endif ?>
+  $datos = array();
+  foreach ($proyecto->field_proyecto_pndes as $valor) {
+       $parents = taxonomy_get_parents($datos[] = $valor['value']);
 
+       $pndes = taxonomy_get_term($datos[] = $valor['value'], $reset = FALSE);
+       $des_pndes[] = $pndes->description;
+       $des_pndes2  = array_reverse($des_pndes);
+  }
+  $contenido = '<ul>';
+  $contenido .= ($des_pndes2[0]) ? '<li> <i><b>Objetivo Histórico:</b></i><br>'. $des_pndes2[0] . '</li>' : '';
+  $contenido .= ($des_pndes2[1]) ?'<li> <i><b>Objetivo Nacional:</b></i><br>'. $des_pndes2[1] . '</li>' : '';
+  $contenido .= ($des_pndes2[2]) ?'<li> <i><b>Objetivo Estratégico:</b></i><br>'. $des_pndes2[2] . '</li>' : '';
+  $contenido .= ($des_pndes2[3]) ?'<li> <i><b>Objetivo General:</b></i><br>'. $des_pndes2[3] . '</li>' : '';
+  $contenido .= ($des_pndes2[4]) ?'<li> <i><b>Objetivos Específicos:</b></i><br>'. $des_pndes2[4] . '</li>' : '';
+  $contenido .= '</ul>';
+?>
+<tr><td colspan="2" align="justify"><?php print $contenido;?>&nbsp;</td></tr>
+<!-- end PNDS -->
 
+<!-- Politicas Ministeriales -->
 <tr><td colspan="2" align="center"><b><?php print $content->content['field_poli_ministeriales']['field']['#title'];?>:</b>&nbsp;</td></tr>
 <?php
   $datos = array();
@@ -272,10 +282,59 @@
   $contenido = (count($datos)) ? '<ul><li>' . implode('</li><li>', $datos) . '</li></ul>' : t('No se han ingresado politicas ministeriales a este proyecto'); 
 ?>
 <tr><td colspan="2" align="justify"><?php print $contenido;?>&nbsp;</td></tr>
+<!-- end Politicas Ministeriales -->
 
+<!-- Programas -->
+<tr><td colspan="2" align="center"><b><?php print $content->content['field_proyectos_programas']['field']['#title'];?>:</b>&nbsp;</td></tr>
+<?php
+  $datos = array();
+  foreach ($proyecto->field_proyectos_programas as $valor) {
+    $datos[] = $valor['value'];
+  }
+  $contenido = (count($datos)) ? '<ul><li>' . implode('</li><li>', $datos) . '</li></ul>' : t('No se han ingresado programa  a este proyecto'); 
+?>
+<tr><td colspan="2" align="justify"><?php print $contenido;?>&nbsp;</td></tr>
+<!-- end Programas -->
+<!-- problemas  -->
+  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_problemas']['field']['#title'];?>:</b>&nbsp;</td></tr>
+  <?php
+    $datos = array();
+    foreach ($proyecto->field_proyecto_problemas as $valor) {
+      $datos[] = check_plain($valor['value']);
+    }
+    $contenido = (count($datos)) ? '<ul><li>' . implode('</li><li>', $datos) . '</li></ul>' : t('No se han ingresado problemas para este proyecto'); 
+  ?>
+  <tr><td colspan="2" align="justify"><?php print  $contenido;?>&nbsp;</td></tr>
+<!-- end problemas  -->
+<!-- causas  -->
+  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_causas']['field']['#title'];?>:</b>&nbsp;</td></tr>
+  <?php
+    $datos = array();
+    foreach ($proyecto->field_proyecto_causas as $valor) {
+      $datos[] = check_plain($valor['value']);
+    }
+    $contenido = (count($datos)) ? '<ul><li>' . implode('</li><li>', $datos) . '</li></ul>' : t('No se han ingresado causas para este proyecto'); 
+  ?>
+  <tr><td colspan="2" align="justify"><?php print  $contenido;?>&nbsp;</td></tr>
+<!-- end causas  -->
+
+<!-- justificación & Alcance  -->
+<?php if (variable_get('proyectos_operativos_muestra_justicacion', TRUE)): ?>
+  <tr><td colspan="2" align="center" ><h3><? print t('Justificación');?></h3></td></tr
+  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_justificacion']['field']['#title'];?>:</b>&nbsp;</td></tr>
+  <tr><td colspan="2" align="justify"><?php print strip_tags(drupal_render($content->content['field_proyecto_justificacion']));?>&nbsp;</td></tr>
+<?php endif ?>
+<?php if (variable_get('proyectos_operativos_muestra_alcance', TRUE)): ?>
+  <tr><td colspan="2" align="center" ><h3><? print t('Alcance del Proyecto');?></h3></td></tr>
+  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_alcance']['field']['#title'];?>:</b>&nbsp;</td></tr>
+  <tr><td colspan="2" align="justify"><?php print strip_tags(drupal_render($content->content['field_proyecto_alcance']));?>&nbsp;</td></tr>
+<?php endif ?>
+<!-- end justificación & Alcance  -->
+
+<!-- Lineas estrategicas -->
 <tr><td align="center" colspan="2">&nbsp;<b><?php print $content->content['field_lineas_estrategicas']['field']['#title'];?>:</b>&nbsp;</td></tr>
 <tr><td align="center" colspan="2">&nbsp;<?php print strip_tags($x=drupal_render($content->content['field_lineas_estrategicas']));?>&nbsp;</td></tr>
-
+<!-- end Lineas estrategicas -->
 
 <tr><td colspan="2" align="center" ><h3><? print t('Localización del Proyecto');?></h3></td></tr>
 <tr><td colspan="2" align="center" ><h4><? print t('Localización Internacional o Nacional');?></h4></td></tr>
@@ -520,26 +579,6 @@
 <tr><td colspan="2" align="center" ><h2><? print t('Indicadores del Proyecto');?></h2></td></tr>
 <?php if (variable_get('proyectos_operativos_muestra_enunciado_problema', TRUE)): ?>
   <tr><td colspan="2" align="center" ><h3><? print t('Enunciado del Problema');?></h3></td></tr>
-  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_causas']['field']['#title'];?>:</b>&nbsp;</td></tr>
-  <?php
-    $datos = array();
-    foreach ($proyecto->field_proyecto_causas as $valor) {
-      $datos[] = check_plain($valor['value']);
-    }
-    $contenido = (count($datos)) ? '<ul><li>' . implode('</li><li>', $datos) . '</li></ul>' : t('No se han ingresado causas para este proyecto'); 
-  ?>
-  <tr><td colspan="2" align="justify"><?php print  $contenido;?>&nbsp;</td></tr>
-  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_problemas']['field']['#title'];?>:</b>&nbsp;</td></tr>
-  <?php
-    $datos = array();
-    foreach ($proyecto->field_proyecto_problemas as $valor) {
-      $datos[] = check_plain($valor['value']);
-    }
-    $contenido = (count($datos)) ? '<ul><li>' . implode('</li><li>', $datos) . '</li></ul>' : t('No se han ingresado problemas para este proyecto'); 
-  ?>
-  <tr><td colspan="2" align="justify"><?php print  $contenido;?>&nbsp;</td></tr>
-
-
   <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_consecuencias']['field']['#title'];?>:</b>&nbsp;</td></tr>
   <?php
   $datos = array();
@@ -549,19 +588,10 @@
   $contenido = (count($datos)) ? '<ul><li>' . implode('</li><li>', $datos) . '</li></ul>' : t('No se han ingresado consecuencias a este proyecto'); 
   ?>
   <tr><td colspan="2" align="justify"><?php print $contenido;?>&nbsp;</td></tr>
+<?php endif ?>
 
 
-<?php endif ?>
-<?php if (variable_get('proyectos_operativos_muestra_justicacion', TRUE)): ?>
-  <tr><td colspan="2" align="center" ><h3><? print t('Justificación');?></h3></td></tr>
-  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_justificacion']['field']['#title'];?>:</b>&nbsp;</td></tr>
-  <tr><td colspan="2" align="justify"><?php print strip_tags(drupal_render($content->content['field_proyecto_justificacion']));?>&nbsp;</td></tr>
-<?php endif ?>
-<?php if (variable_get('proyectos_operativos_muestra_alcance', TRUE)): ?>
-  <tr><td colspan="2" align="center" ><h3><? print t('Alcance del Proyecto');?></h3></td></tr>
-  <tr><td colspan="2" align="center"><b><?php print $content->content['field_proyecto_alcance']['field']['#title'];?>:</b>&nbsp;</td></tr>
-  <tr><td colspan="2" align="justify"><?php print strip_tags(drupal_render($content->content['field_proyecto_alcance']));?>&nbsp;</td></tr>
-<?php endif ?>
+
 <?php if (variable_get('proyectos_operativos_muestra_servicios_balance', TRUE)): ?>
   <tr><td colspan="2" align="center" ><h3><? print t('Impacto Ambiental del Proyecto');?></h3></td></tr>
   <tr><td colspan="2" align="center" ><h4><? print t('Tipo de impacto');?></h4></td></tr>
