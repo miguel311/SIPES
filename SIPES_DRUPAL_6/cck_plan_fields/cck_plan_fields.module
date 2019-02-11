@@ -1,0 +1,772 @@
+<?php
+  /**
+  * Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana
+  * @file cck_plan_fields.module
+  * Drupal part Module to code ente planificador module
+  * Copyright 2013 Sistema Automatizado para la Planificación Estratégico-Situacional en la Administración Pública Venezolana (CENDITEL)
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  * 
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  * 
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * @author Cenditel Merida - Msc. Juan Vizcarrondo
+  * @date 2013-08-03 // (a&#241;o-mes-dia)
+  * @version 0.2 // (0.2)
+  *
+  */
+
+/**
+* Implementation of hook_field_info().
+*/
+function cck_plan_fields_field_info() {
+  return array(
+    'cck_plan_fields_field' => array(
+      'label' => t('Plan line field'),
+      'description' => t('Store items operative plan data in the database.'),
+    ),
+  );
+}
+
+/**
+* Implementation of hook_field_settings().
+*/
+function cck_plan_fields_field_settings($op, $field) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $vocabularies = taxonomy_get_vocabularies();
+      $vocabulary_options = array();
+      foreach($vocabularies as $vocabulary) {
+        $vocabulary_options[$vocabulary->vid] = $vocabulary->name;
+      }
+      $form['vid'] = array(
+        '#type' => 'select',
+        '#title' => t('Taxonomy'),
+        '#default_value' => !empty($field['vid']) ? $field['vid'] : '',
+        '#options' => $vocabulary_options,
+      );
+      if (!empty($field['vid'])) {
+        $vid = $field['vid'];
+        //$terms = taxonomy_get_tree($vid);
+        $tree = taxonomy_get_tree($vid);
+        $options = array();
+        if ($tree) {
+          foreach ($tree as $term) {
+              $choice = new stdClass();
+              $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
+              $options[] = $choice;
+          }
+        }
+        $form['vtid'] = array(
+          '#type' => 'select',
+          '#default_value' => isset($field['vtid']) ? $field['vtid'] : array(),
+          '#options' => $options,
+          '#multiple' => TRUE,
+          );
+      }
+      $types = array(
+        'int' => t('Integer'),
+        'float' => t('Float'),
+      );
+      $form['cck_plan_fields_simple_type'] = array(
+        '#type' => 'select',
+        '#title' => t('Type'),
+        '#default_value' => !empty($field['cck_plan_fields_simple_type']) ? $field['cck_plan_fields_simple_type'] : 'int',
+        '#options' => $types,
+      );
+      $form['cck_plan_fields_simple_titulo'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Titulo del total'),
+        //'#required' => TRUE,
+        '#weight' => -9,
+        '#default_value' => !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : '',
+      );
+      return $form;
+    case 'save':
+      $save_settings = array(
+        'vid',
+        'vtid',
+        'cck_plan_fields_simple_type',
+        'cck_plan_fields_simple_titulo',
+      );
+      return $save_settings;
+    case 'database columns':
+      $columns['tid'] = array(
+        'type' => 'int',
+        'not null' => FALSE,
+        'sortable' => TRUE,
+        'views' => TRUE,
+      );
+      for ($i = 0; $i < 12; $i++) {
+        $field_id = $i ? 'value_' . $i : 'value';
+        $columns[$field_id] = array(
+          'type' => 'numeric',
+          'size' => 'normal',
+          'not null' => TRUE,
+          'default' => 0,
+          'precision' => 32,
+          'scale' => 0,
+        );
+      }
+      return $columns;
+    case 'views data':
+      $data = content_views_field_views_data($field);
+      $db_info = content_database_info($field);
+      $table_alias = content_views_tablename($field);
+      $ftypes = array(
+        'tid' => t('Plan Account'),
+        'value' => t('January'),
+        'value_1' => t('February'), 
+        'value_2' => t('March'), 
+        'value_3' => t('April'),
+        'value_4' => t('May'),
+        'value_5' => t('June'),
+        'value_6' => t('July'),
+        'value_7' => t('August'),
+        'value_8' => t('September'),
+        'value_9' => t('Octuber'),
+        'value_10' => t('November'),
+        'value_11' => t('December'),
+      );
+      foreach ($ftypes as $ftype => $label) {
+        $copy = $data[$table_alias][$field['field_name'] . $ftype];
+        $copy['title'] = t($label);
+        $copy['filter']['handler'] = 'content_handler_filter_many_to_one';
+        $copy['filter']['numeric'] = TRUE;
+        unset($copy['field'], $copy['argument'], $copy['sort']);
+        $data[$table_alias][$field['field_name'] . $ftype . '_many_to_one'] = $copy;
+        $data[$table_alias][$field['field_name'] . $ftype]['argument']['handler'] = 'content_handler_argument_many_to_one';
+        if ($ftype != 'description') {
+          $data[$table_alias][$field['field_name'] . $ftype]['argument']['numeric'] = TRUE;
+        }
+      }
+      return $data;
+  }
+}
+
+/**
+ * Implementation of hook_content_is_empty().
+ */
+function cck_plan_fields_content_is_empty($item, $field) {
+  $flat = TRUE;
+  foreach (array_keys($field['columns']) as $ftype) {
+    if ($ftype != 'tid' && !empty($item[$ftype])) {
+      $flat = FALSE;
+    }
+  }
+  return $flat;
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function cck_plan_fields_field_formatter_info() {
+  $formatters = array(
+    'default' => array(
+      'label'  => t('Default'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'field types'  => array('cck_plan_fields_field'),
+    ),
+    'single_line' => array(
+      'label'  => t('Single Line'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'field types'  => array('cck_plan_fields_field'),
+    ),
+  );
+  $ftypes = array(
+    'tid' => t('Partidas'),
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  foreach ($ftypes as $value => $label) {
+    $formatters['single_line_' . $value] = array(
+      'label'  => t('Single Line ') . $label,
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'field types'  => array('cck_plan_fields_field'),
+    );
+  }
+  return $formatters;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function cck_plan_fields_theme() {
+  return array(
+    // Shows address in the default view: Multilines
+    'cck_plan_fields_formatter_default' => array(
+      'arguments' => array('element'),
+    ),
+    // Shows address in only one line
+    'cck_plan_fields_formatter_single_line' => array(
+      'arguments' => array('element'),
+    ),
+    'cck_plan_fields_formatter_single_line_tid' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value1' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value2' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value3' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic'
+    ),
+    'cck_plan_fields_formatter_single_line_value4' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value5' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value6' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value7' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value8' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value9' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value10' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_formatter_single_line_value11' => array(
+      'arguments' => array('form' => NULL),
+      'function' => 'theme_cck_plan_fields_formatter_generic',
+    ),
+    'cck_plan_fields_table' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Proxy theme function for cck_plan_fields formatters.
+ */
+function theme_cck_plan_fields_formatter_generic($element) {
+  $output = '';
+  $flag = explode('single_line_', $element['#formatter']);
+  $ftypes = array(
+    'tid' => t('Partidas'),
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  if ($flag[1] == 'tid') {
+    $term = taxonomy_get_term($element['#item'][$flag[1]]);
+    // If this term's vocabulary supports localization.
+    if (module_exists('i18ntaxonomy') && i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_LOCALIZE) {
+      $term->name = tt("taxonomy:term:$term->tid:name", $term->name);
+    }
+    $output = '<strong>'. $ftypes[$flag[1]] .': </strong>'. check_plain($term->name);
+  }
+  else {
+    $output = '<strong>'. $ftypes[$flag[1]] .': </strong>'. number_format($element['#item'][$flag[1]], 2, '.', ',');
+  }
+  return $output;
+}
+
+/**
+ * theme_cck_plan_fields_formatter_default().
+ * default formatter theme
+ */
+function theme_cck_plan_fields_formatter_default($element) {
+  $output = '';
+  // If all fields are hidden, return ''
+  if (empty($element['#item']['tid'])) {
+    return $output;
+  }
+  $format_number = array(
+    'decimals' => variable_get('proyectos_operativos_number_decimals', 0),
+    'dec_point' => variable_get('proyectos_operativos_number_dec_point', ','),
+    'thousands_sep' => variable_get('proyectos_operativos_number_thousands_sep', '.'),
+  );
+  $ftypes = array(
+    'tid' => t('Partidas'),
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $ftypes['total'] = !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Total');
+  $headers = array();
+  $rows = array();
+  $row = array();
+  $total = 0;
+  foreach ($ftypes as $value => $label) {
+    $headers[] = array('data' => $label);
+    if ($value != 'tid') {
+      if ($value != 'total') {
+        $total += $element['#item'][$value];
+        $row[] = array('data' => number_format($element['#item'][$value], $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']));
+      }
+      else {
+        $row[] = array('data' => $total);
+      }
+    }
+    else {
+      $term = taxonomy_get_term($element['#item'][$value]);
+      // If this term's vocabulary supports localization.
+      if (module_exists('i18ntaxonomy') && i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_LOCALIZE) {
+        $term->name = tt("taxonomy:term:$term->tid:name", $term->name);
+      }
+      $row[] = array('data' => $term->name);
+    }
+  }
+  $rows[] = $row;
+  return theme('table', $headers, $rows);
+}
+
+/**
+ * theme_cck_plan_fields_formatter_single_line().
+ * display line items products in a single line
+ */
+function theme_cck_plan_fields_formatter_single_line($element) {
+  $output = '';
+  // If all fields are hidden, return ''
+  if (empty($element)) {
+    return $output;
+  }
+  $format_number = array(
+    'decimals' => variable_get('proyectos_operativos_number_decimals', 0),
+    'dec_point' => variable_get('proyectos_operativos_number_dec_point', ','),
+    'thousands_sep' => variable_get('proyectos_operativos_number_thousands_sep', '.'),
+  );
+  $ftypes = array(
+    'tid' => t('Partidas'),
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  foreach ($ftypes as $value => $label) {
+    if ($value != 'tid') {
+      $output .= ' <strong>'. $label .': </strong>'. number_format($element['#item'][$value], $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']);
+    }
+    else {
+      $term = taxonomy_get_term($element['#item'][$value]);
+      // If this term's vocabulary supports localization.
+      if (module_exists('i18ntaxonomy') && i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_LOCALIZE) {
+        $term->name = tt("taxonomy:term:$term->tid:name", $term->name);
+      }
+      $output .= '<strong>'. $label .': </strong>'. check_plain($term->name);
+    }
+  }
+  return '<div class="items-plan-field">'. $output .'</div>';
+}
+
+/**
+ * Implementation of hook_widget_info().
+ */
+function cck_plan_fields_widget_info() {
+  return array(
+    'cck_plan_fields_elements' => array(
+      'label'           => t('Items Plan Field'),
+      'field types'     => array('cck_plan_fields_field'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks'       => array('default value' => CONTENT_CALLBACK_DEFAULT),
+    ),
+  );
+}
+
+/**
+* Implementation of hook_widget_settings().
+*/
+function cck_plan_fields_widget_settings($op, $widget) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $form['min'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Minimum'),
+        '#element_validate' => array('_element_validate_number'),
+        '#default_value' => is_numeric($widget['min']) ? $widget['min'] : '',
+      );
+      $form['max'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Maximum'),
+        '#element_validate' => array('_element_validate_number'),
+        '#default_value' => is_numeric($widget['max']) ? $widget['max'] : '',
+      );
+      return $form;
+    break;
+    case 'save':
+      return array(
+        'min',
+        'max',
+      );
+    break;
+  }
+}
+
+/**
+* Implementation of theme_cck_plan_fields_table().
+*/
+function theme_cck_plan_fields_table($form = array()) {
+  $headers = array();
+  $rows = array();
+  $row = array();
+  $ftypes = array(
+    'tid' => t('Account'),
+    'value' => t('Ene'),
+    'value_1' => t('Feb'), 
+    'value_2' => t('Mar'), 
+    'value_3' => t('Abr'),
+    'value_4' => t('May'),
+    'value_5' => t('Jun'),
+    'value_6' => t('Jul'),
+    'value_7' => t('Aug'),
+    'value_8' => t('Sep'),
+    'value_9' => t('Oct'),
+    'value_10' => t('Nov'),
+    'value_11' => t('Dic'),
+  );
+  $ftypes['total'] = !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Total');
+  $backgrounds = array(
+    'tid' => 'blue',
+    'value' => 'black',
+    'value_1' => 'blue', 
+    'value_2' => 'white', 
+    'value_3' => 'blue',
+    'value_4' => 'white',
+    'value_5' => 'blue',
+    'value_6' => 'white',
+    'value_7' => 'blue',
+    'value_8' => 'white',
+    'value_9' => 'blue',
+    'value_10' => 'white',
+    'value_11' => 'blue',
+  );
+  if (isset($form['#title']) && $form['#title']) {
+    $field = str_replace('_', '-', $form['#field_name']);
+    $output .= '<div id="edit-' . $field . '-0-value-wrapper" class="form-item"><label for="edit-' . $field . '-0-value">' . $form['#title'] . '</label>';
+  }
+  $output = '<div style="width:2150px">';
+  foreach ($ftypes as $ftype => $label) {
+    if($ftype != 'tid') {
+      $output .= '<div style="width:150px;float:left;margin-left:5px">' . drupal_render($form[$ftype]) . '</div>';
+    }
+    else {
+      $output .= '<div style="width:130px;float:left;margin-left:5px">' . drupal_render($form[$ftype]) . '</div>';
+    }
+  }
+  $output .= drupal_render($form);
+  $output .= '</div>'; 
+  if (isset($form['#title']) && $form['#title']) {
+    $output .= '</div>';
+  } 
+  return $output;
+}
+
+/**
+ * Implementation of hook_widget().
+ */
+function cck_plan_fields_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  $cck_plan_fields_path = drupal_get_path('module', 'cck_plan_fields');
+  drupal_add_js($cck_plan_fields_path . '/js/cck_plan_fields.js');
+  $field_name = $field['field_name'];
+  $element = array();
+  $ftypes = array(
+    'tid' => t('Partida'),
+    'value' => t('Ene'),
+    'value_1' => t('Feb'), 
+    'value_2' => t('Mar'), 
+    'value_3' => t('Abr'),
+    'value_4' => t('May'),
+    'value_5' => t('Jun'),
+    'value_6' => t('Jul'),
+    'value_7' => t('Aug'),
+    'value_8' => t('Sep'),
+    'value_9' => t('Oct'),
+    'value_10' => t('Nov'),
+    'value_11' => t('Dic'),
+  );
+  $ftypes['total'] = !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Total');
+  $class = $field_name . '_' . $delta . '_field';
+  $vid = $field['vid'];
+  //$terms = taxonomy_get_tree($vid);
+  $tree = taxonomy_get_tree($vid);
+  $options = array();
+  if ($tree) {
+    foreach ($tree as $term) {
+      if (isset($field['vtid'][$term->tid])) {
+        $choice = new stdClass();
+        $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
+        $options[] = $choice;
+      }
+    }
+  }
+  $element['tid'] = array(
+    '#type' => 'select',
+    '#default_value' => isset($items[$delta]['tid']) ? $items[$delta]['tid'] : NULL,
+    '#options' => $options,
+  );
+  if ($delta == 0) {
+    $element['tid']['#title'] = $ftypes['tid'];
+  }
+  $total = 0;
+  for ($i = 0; $i < 12; $i++) {
+    $class1 = ' ' . $field_name . '_m' . $i . '_field' . ' ' . $field_name . '_dato_field';
+    $field_id = $i ? 'value_' . $i : 'value';
+    $field_id_form = $i ? 'value-' . $i : 'value';
+    $element[$field_id] = array(
+      '#type' => 'textfield',
+      '#default_value' => isset($items[$delta][$field_id]) && $items[$delta][$field_id] ? $items[$delta][$field_id] : 0,
+      '#size' => 15,
+      '#attributes' => array('class' => $class . $class1 . ' number', 'onchange' => "suma('$class');sumatexto('" . $field_name . '_dato_field' . "');sumatexto('" . $field_name . '_m' . $i . '_field' . "');"),
+    );
+    $total += $element[$field_id]['#default_value'];
+    if ($delta == 0) {
+      $element[$field_id]['#title'] = $ftypes[$field_id];
+    }
+  }
+  $element['total'] = array(
+    '#type' => 'textfield',
+    '#default_value' => number_format($total, 0, '.', ''),
+    '#size' => 15,
+    '#attributes' => array('class' => $class . '_total totales'),
+  );
+  if ($delta == 0) {
+    $element['total']['#title'] = $ftypes['total'];
+  }
+  $element['#theme'] = 'cck_plan_fields_table';
+  if (empty($element['#element_validate'])) {
+    $element['#element_validate'] = array();
+  }
+  array_unshift($element['#element_validate'], 'cck_plan_fields_validate');
+  $form_state['#field_info'][$element['#field_name']] = $form['#field_info'][$field_name];
+  // Used so that hook_field('validate') knows where to
+  // flag an error in deeply nested forms.
+  if (empty($form['#parents'])) {
+    $form['#parents'] = array();
+  }
+  $element['_error_element'] = array(
+    '#type' => 'value',
+    '#value' => implode('][', array_merge($form['#parents'], array('value'))),
+  );
+  return $element;
+}
+
+/**
+ * FAPI validation of an individual element.
+ */
+function cck_plan_fields_validate($element, &$form_state) {
+  $field_name = $element['#field_name'];
+  if (!isset($element['_remove']['#post'][$field_name][$element['#delta']]['_remove'])) {
+    $type_name = $element['#type_name'];
+    $field = content_fields($field_name, $type_name);
+    $min = is_numeric($field['widget']['min']);
+    $max = is_numeric($field['widget']['max']);
+    $cck_plan_fields_path = drupal_get_path('module', 'cck_plan_fields');
+    drupal_add_js($cck_plan_fields_path . '/js/cck_plan_fields.js');
+    $flag = FALSE;
+    foreach ($element['#columns'] as $ftype) {
+      if ($ftype != 'tid' && !empty($element[$ftype]['#value'])) {
+        $error_field = implode('][', $element['#parents']) .'][' . $ftype;
+        if (!is_numeric($element[$ftype]['#value'])) {
+          form_set_error($error_field, t('Amount should be a number in %field.', array('%field' => t($field['widget']['label']))));
+        }
+        elseif ($field['cck_plan_fields_simple_type'] == 'int') {
+          $start = $element[$ftype]['#value'];
+          $value = preg_replace('@[^-0-9]@', '', $start);
+          if ($start != $value) {
+            form_set_error($error_field, t('Only numbers are allowed in %field.', array('%number' => $field['widget']['min'], '%field' => t($field['widget']['label']))));
+          }
+        }
+        elseif ($min && $field['widget']['min'] > $element[$ftype]['#value']) {
+          form_set_error($error_field, t('Amount should be greater %number in %field.', array('%number' => $field['widget']['min'], '%field' => t($field['widget']['label']))));
+        }
+        elseif ($max && $field['widget']['max'] < $element[$ftype]['#value']) {
+          form_set_error($error_field, t('Amount should be litter %number in %field.', array('%number' => $field['widget']['max'], '%field' => t($field['widget']['label']))));
+        }
+        $flag = TRUE;
+      }
+    }
+    if (!$flag) {
+      return;
+    }
+    if ($element['#delta']) {
+      $current_taxonomy = $element['tid']['#value']; 
+      for($i = 0; $i < $element['#delta']; $i++) {
+        if ($current_taxonomy == $form_state['values'][$field_name][$i]['tid']) {
+          $error_field = implode('][', $element['#parents']) .'][tid';
+          form_set_error($error_field, t('Account can not be repeat in %field.', array('%field' => t($field['widget']['label']))));
+        }
+      }
+    }
+  }
+}
+
+
+/**
+ * Implementation of hook_feeds_node_processor_targets_alter().
+ *
+ * @see FeedsNodeProcessor::getMappingTargets()
+ */
+function cck_plan_fields_feeds_node_processor_targets_alter(&$targets, $content_type) {
+  $info = content_types($content_type);
+  $fields = array();
+  if (isset($info['fields']) && count($info['fields'])) {
+    foreach ($info['fields'] as $field_name => $field) {
+      if (in_array($field['type'], array('cck_plan_fields_field'))) {
+        $fields[$field_name] = isset($field['widget']['label']) ? $field['widget']['label'] : $field_name;
+      }
+    }
+  }
+  $ftypes = array(
+    'tid' => t('Taxonomy'),
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+
+  foreach ($fields as $k => $name) {
+    foreach($ftypes as $id => $month) {
+      $targets[$k . ':' . $id] = array(
+        'name' => check_plain($name) . '(' . $month . ')',
+        'callback' => 'cck_plan_fields_feeds_set_target',
+        'description' => t('The part @month_name of @name field of the node.', array('@name' => $name, '@month_name' => $month)),
+      );
+    }
+  }
+}
+
+function cck_plan_fields_feeds_set_target($node, $target, $value) {
+  $ftypes = array(
+    'tid' => t('Taxonomy'),
+    'value' => t('January'),
+    'value_1' => t('February'), 
+    'value_2' => t('March'), 
+    'value_3' => t('April'),
+    'value_4' => t('May'),
+    'value_5' => t('June'),
+    'value_6' => t('July'),
+    'value_7' => t('August'),
+    'value_8' => t('September'),
+    'value_9' => t('Octuber'),
+    'value_10' => t('November'),
+    'value_11' => t('December'),
+  );
+  $field_default = array();
+  foreach($ftypes as $id => $month) {
+    $field_default[$id] = 0;
+  }
+
+  list($field_name, $sub_field) = explode(':', $target);
+  $field = isset($node->$field_name) ? $node->$field_name : $field_default;
+  // Handle multiple value fields.
+  $field = content_fields($field_name, $node->type);
+  if (is_array($value)) {
+    $i = 0;
+    foreach ($value as $v) {
+      if (!is_array($v) && !is_object($v)) {
+        if ($sub_field == 'tid') {
+          $terms_found = content_taxonomy_get_term_by_name_vid($v, $field['vid']);
+          if ($terms_found->tid) {
+            $field[$i][$sub_field] = $terms_found->tid;
+          }
+        }
+        elseif(isset($field[$i]['tid']) && $field[$i]['tid']) {
+          $field[$i][$sub_field] = $v;
+        }
+      }
+      $i++;
+    }
+  }
+  else {
+    if ($sub_field == 'tid') {
+      $terms_found = content_taxonomy_get_term_by_name_vid($value, $field['vid']);
+      if ($terms_found->tid) {
+        $field[$i][$sub_field] = $terms_found->tid;
+      }
+    }
+    elseif(isset($field[0]['tid']) && $field[0]['tid']) {
+      $field[$i][$sub_field] = $value;
+    }
+    $field[0][$sub_field] = $value;
+  }
+  $node->$field_name = $field;
+}
+
+function cck_plan_fields_get_term_by_name_vid($name, $vid) {
+  $db_result = db_query(db_rewrite_sql("SELECT t.tid, t.name FROM {term_data} t WHERE LOWER(t.name) = LOWER('%s') AND vid=%d", 't', 'tid'), trim($name), $vid);
+  $result = array();
+  $term = db_fetch_object($db_result);
+  if($term) {
+    return $term->tid;
+  }
+  return FALSE;
+}
