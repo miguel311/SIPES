@@ -49,30 +49,68 @@ function cck_plan_fields_combine_term_field_settings($op, $field) {
       foreach($vocabularies as $vocabulary) {
         $vocabulary_options[$vocabulary->vid] = $vocabulary->name;
       }
-      $form['vid'] = array(
+      $list = array();
+      $vids = array();
+      for($i = 0; $i <= 11; $i++) {
+        $id = $i > 0? 'vid_' . $i : 'vid';
+        $vids[$i] = isset($field[$id]) && !empty($field[$id]) ? $field[$id] : ''; 
+        $list[$i] = ($i + 1);
+      }
+      $count_vocabulary = array();
+      for($i = 0; $i < 10; $i++) {
+        $count_vocabulary[$i] = ($i + 1);
+      }
+      $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+      $form['count_vocabulary'] = array(
+        '#title' => t('Count Term fields'),
         '#type' => 'select',
-        '#title' => t('Taxonomy'),
-        '#default_value' => !empty($field['vid']) ? $field['vid'] : '',
-        '#options' => $vocabulary_options,
+        '#default_value' => $count_vocabulary_default,
+        '#options' => $count_vocabulary,
       );
-      if (!empty($field['vid'])) {
-        $vid = $field['vid'];
-        //$terms = taxonomy_get_tree($vid);
-        $tree = taxonomy_get_tree($vid);
-        $options = array();
-        if ($tree) {
-          foreach ($tree as $term) {
+      for($i = 0; $i <= $count_vocabulary_default; $i++) {
+        $idx = $i > 0? 'vid_' . $i : 'vid';
+        $aux = $i + 1;
+        $default_vid =  isset($field[$idx]) && !empty($field[$idx]) ? $field[$idx] : FALSE;
+        $form[$idx] = array(
+          '#type' => 'select',
+          '#title' => t('Taxonomy %i', array('%i' => $aux)),
+          '#default_value' => $default_vid,
+          '#options' => $vocabulary_options,
+        );
+        if ($default_vid) {
+          $tree = taxonomy_get_tree($default_vid);
+          $options = array();
+          if ($tree) {
+            foreach ($tree as $term) {
               $choice = new stdClass();
               $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
               $options[] = $choice;
+            }
           }
-        }
-        $form['vtid'] = array(
-          '#type' => 'select',
-          '#default_value' => isset($field['vtid']) ? $field['vtid'] : array(),
-          '#options' => $options,
-          '#multiple' => TRUE,
+          $idx1 = $i > 0? 'vtid_' . $i : 'vtid';
+          $default_vtid =  isset($field[$idx1]) && !empty($field[$idx1]) ? $field[$idx1] : array();
+          $form[$idx1] = array(
+            '#title' => t('Term to select %i', array('%i' => $aux)),
+            '#type' => 'select',
+            '#default_value' => $default_vtid,
+            '#options' => $options,
+            '#multiple' => TRUE,
           );
+          $idx1 = $i > 0? 'cck_plan_fields_simple_titulo_term_' . $i : 'cck_plan_fields_simple_titulo_term';
+          $form[$idx1] = array(
+            '#type' => 'textfield',
+            '#title' => t('Titulo del Termino de la taxonomia %i', array('%i' => $aux)),
+            '#default_value' => isset($field[$idx1]) && !empty($field[$idx1]) ? $field[$idx1] : t('Term'),
+          );
+          $id = $i > 0? 'combine_weight_' . $i : 'combine_weight';
+          $form[$id] = array(
+            '#type' => 'textfield',
+            '#title' => t('Weight %i', array('%i' => $aux)),
+            '#default_value' => isset($field[$id])? $field[$id] : 0,
+            '#size' => 3,
+            '#element_validate' => array('_element_validate_number'),
+          );
+        }
       }
       $types = array(
         'int' => t('Integer'),
@@ -84,57 +122,113 @@ function cck_plan_fields_combine_term_field_settings($op, $field) {
         '#default_value' => !empty($field['cck_plan_fields_simple_type']) ? $field['cck_plan_fields_simple_type'] : 'int',
         '#options' => $types,
       );
-      $form['cck_plan_fields_simple_titulo_term'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Titulo del Termino de la taxonomia'),
-        //'#required' => TRUE,
-        '#weight' => -9,
-        '#default_value' => !empty($field['cck_plan_fields_simple_titulo_term']) ? $field['cck_plan_fields_simple_titulo_term'] : t('Term'),
-      );
+
+      if ($field['cck_plan_fields_simple_type'] == 'float') {
+        $form['cck_plan_fields_simple_precision'] = array(
+          '#type' => 'select',
+          '#options' => drupal_map_assoc(range(10, 32)),
+          '#title' => t('Precision'),
+          '#description' => t('The total number of digits to store in the database, including those to the right of the decimal.'),
+          '#default_value' => is_numeric($field['cck_plan_fields_simple_precision']) ? $field['cck_plan_fields_simple_precision'] : 10,
+        );
+        $form['cck_plan_fields_simple_scale'] = array(
+          '#type' => 'select',
+          '#options' => drupal_map_assoc(range(0, 10)),
+          '#title' => t('Scale'),
+          '#description' => t('The number of digits to the right of the decimal.'),
+          '#default_value' => is_numeric($field['cck_plan_fields_simple_scale']) ? $field['cck_plan_fields_simple_scale'] : 2,
+        );
+        $form['cck_plan_fields_simple_decimal'] = array(
+          '#type' => 'select',
+          '#options' => array('.' => 'decimal point', ',' => 'comma', ' ' => 'space'),
+          '#title' => t('Decimal marker'),
+          '#description' => t('The character users will input to mark the decimal point in forms.'),
+          '#default_value' => !empty($field['cck_plan_fields_simple_decimal']) ? $field['cck_plan_fields_simple_decimal'] : '.',
+        );
+      }
 
       $form['cck_plan_fields_simple_titulo'] = array(
         '#type' => 'textfield',
         '#title' => t('Titulo del monto'),
         //'#required' => TRUE,
-        '#weight' => -9,
         '#default_value' => !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Monto'),
+      );
+      $form['combine_weight_value'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Weight value'),
+        '#default_value' => isset($field['combine_weight_value'])? $field['combine_weight_value'] : 0,
+        '#size' => 3,
+        '#element_validate' => array('_element_validate_number'),
       );
       return $form;
     case 'save':
       $save_settings = array(
-        'vid',
-        'vtid',
         'cck_plan_fields_simple_type',
-        'cck_plan_fields_simple_titulo_term',
         'cck_plan_fields_simple_titulo',
+        'count_vocabulary',
+        'combine_weight_value',
+        'cck_plan_fields_simple_precision',
+        'cck_plan_fields_simple_scale',
+        'cck_plan_fields_simple_decimal',
       );
+      $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+      for($i = 0; $i <= $count_vocabulary_default; $i++) {
+        $idx = $i > 0? 'vid_' . $i : 'vid';
+        $save_settings[] = $idx;
+        $idx1 = $i > 0? 'vtid_' . $i : 'vtid';
+        $save_settings[] = $idx1;
+        $idx1 = $i > 0? 'cck_plan_fields_simple_titulo_term_' . $i : 'cck_plan_fields_simple_titulo_term';
+        $save_settings[] = $idx1;
+        $id = $i > 0? 'combine_weight_' . $i : 'combine_weight';
+        $save_settings[] = $id;
+      }
       return $save_settings;
     case 'database columns':
-      $columns['tid'] = array(
-        'type' => 'int',
-        'not null' => FALSE,
-        'sortable' => TRUE,
-        'views' => TRUE,
-      );
-      $columns['value'] = array(
-        'type' => 'numeric',
-        'size' => 'normal',
-        'not null' => TRUE,
-        'default' => 0,
-        'precision' => 32,
-        'scale' => 0,
-      );
+      $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+      for($i = 0; $i <= $count_vocabulary_default; $i++) {
+        $idx = $i > 0? 'tid_' . $i : 'tid';
+        $columns[$idx] = array(
+          'type' => 'int',
+          'not null' => FALSE,
+          'sortable' => TRUE,
+          'views' => TRUE,
+        );
+      }
+      if ($field['cck_plan_fields_simple_type'] == 'int') {
+        $columns['value'] = array(
+          'type' => 'numeric',
+          'size' => 'normal',
+          'not null' => TRUE,
+          'default' => 0,
+        );
+      }
+
+      if ($field['cck_plan_fields_simple_type'] == 'float') {
+        $columns['value'] = array(
+          'type' => 'numeric',
+          'size' => 'normal',
+          'not null' => TRUE,
+          'default' => 0,
+          'precision' => isset($field['cck_plan_fields_simple_precision']) ? $field['cck_plan_fields_simple_precision'] : 10,
+          'scale' => isset($field['cck_plan_fields_simple_scale']) ? $field['cck_plan_fields_simple_scale'] : 2,
+        );
+      }
       return $columns;
     case 'views data':
       $data = content_views_field_views_data($field);
       $db_info = content_database_info($field);
       $table_alias = content_views_tablename($field);
-      $titulo_term = !empty($field['cck_plan_fields_simple_titulo_term']) ? $field['cck_plan_fields_simple_titulo_term'] : t('Term');
       $titulo_monto = !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Monto');
+      $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
       $ftypes = array(
-        'tid' => $titulo_term,
         'value' => $titulo_monto,
       );
+      for($i = 0; $i <= $count_vocabulary_default; $i++) {
+        $idx = $i > 0? 'tid_' . $i : 'tid';
+        $idx1 = $i > 0? 'cck_plan_fields_simple_titulo_term_' . $i : 'cck_plan_fields_simple_titulo_term';
+        $ftypes[$idx] = !isset($field[$idx1]) && empty($field[$idx1]) ? $field[$idx1] : t('Term');
+      }
+
       foreach ($ftypes as $ftype => $label) {
         $copy = $data[$table_alias][$field['field_name'] . $ftype];
         $copy['title'] = t($label);
@@ -156,8 +250,22 @@ function cck_plan_fields_combine_term_field_settings($op, $field) {
  */
 function cck_plan_fields_combine_term_content_is_empty($item, $field) {
   $flat = TRUE;
+  //check term
+  $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+  for($i = 0; $i <= $count_vocabulary_default; $i++) {
+    $idxt = $i > 0? 'tid_' . $i : 'tid';
+    if (!empty($item[$idxt]) && $item[$idxt]) {
+      $flat = FALSE;
+    }
+
+  }
+  if ($flat) {
+    return $flat;
+  }
+  //check value data
+  $flat = TRUE;
   foreach (array_keys($field['columns']) as $ftype) {
-    if ($ftype != 'tid' && !empty($item[$ftype])) {
+    if (!empty($item['value'])) {
       $flat = FALSE;
     }
   }
@@ -220,6 +328,43 @@ function theme_cck_plan_fields_combine_term_formatter_generic($element) {
   return $output;
 }
 
+function cck_plan_fields_combine_term_weight($field) {
+  $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+  for($i = 0; $i <= $count_vocabulary_default; $i++) {
+    $idxt = $i > 0? 'tid_' . $i : 'tid';
+    if (!empty($element['#item'][$idxt])) {
+      $empty = FALSE;
+      continue;
+    }
+  }
+  if ($empty) {
+    return '';
+  }
+  $weights = array();
+  $weights[] = array(
+    'key' => 'value',
+    'title' => !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Monto'),
+    'weight' => isset($field['combine_weight_value'])? $field['combine_weight_value'] : 0,
+  );
+  $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+  for($i = 0; $i <= $count_vocabulary_default; $i++) {
+    $idx1 = $i > 0? 'cck_plan_fields_simple_titulo_term_' . $i : 'cck_plan_fields_simple_titulo_term';
+    $id = $i > 0? 'combine_weight_' . $i : 'combine_weight';
+    $idx = $i > 0? 'vid_' . $i : 'vid';
+    $idxtid = $i > 0? 'vtid_' . $i : 'vtid';
+    $idxt = $i > 0? 'tid_' . $i : 'tid';
+    $weights[] = array(
+      'key' => $idxt,
+      'title' => !empty($field[$idx1]) ? $field[$idx1] : t('Term'),
+      'weight' => isset($field[$id])? $field[$id] : 0,
+      'vid' => $idx,
+      'vtid' => $idxtid,
+    );
+  }
+  uasort($weights, 'combine_term_sort_weight');
+  return $weights;
+}
+
 /**
  * theme_cck_plan_fields_formatter_default().
  * default formatter theme
@@ -230,26 +375,39 @@ function theme_cck_plan_fields_combine_term_formatter_default($element) {
   $field = content_fields($field_name, $type_name);
   $output = '';
   // If all fields are hidden, return ''
-  if (empty($element['#item']['tid'])) {
-    return $output;
+  $empty = TRUE;
+  $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+  for($i = 0; $i <= $count_vocabulary_default; $i++) {
+    $idxt = $i > 0? 'tid_' . $i : 'tid';
+    if (!empty($element['#item'][$idxt])) {
+      $empty = FALSE;
+      continue;
+    }
   }
-  $format_number = array(
-    'decimals' => variable_get('proyectos_operativos_number_decimals', 0),
-    'dec_point' => variable_get('proyectos_operativos_number_dec_point', ','),
-    'thousands_sep' => variable_get('proyectos_operativos_number_thousands_sep', '.'),
-  );
-
-  $headers = array();
-  $rows = array();
-  $row = array();
-  $total = 0;
-  // If this term's vocabulary supports localization.
-  $term = taxonomy_get_term($element['#item']['tid']);
-  if (module_exists('i18ntaxonomy') && i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_LOCALIZE) {
-    $term->name = tt("taxonomy:term:$term->tid:name", $term->name);
+  if ($empty) {
+    return '';
   }
-  $numero = number_format($element['#item']['value'], $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']);
-  return $numero . ' ' . $term->name;
+  $weights = cck_plan_fields_combine_term_weight($field);
+  $i = 0;
+  $items = array();
+  foreach($weights as $value) {
+    if ($value['key'] == 'value') {
+      $numero = number_format($element['#item'][$value['key']], $format_number['decimals'], $format_number['dec_point'], $format_number['thousands_sep']);
+      $items[] = '<div><div class="field-label-inline-first">' . $value['title'] . ':</div> ' . $numero . '</div>';
+    }
+    else {
+      if (isset($element['#item'][$value['key']]) && !empty($element['#item'][$value['key']]) && $element['#item'][$value['key']]) {
+        $term = taxonomy_get_term($element['#item'][$value['key']]);
+        if ($term) {
+          if (module_exists('i18ntaxonomy') && i18ntaxonomy_vocabulary($term->vid) == I18N_TAXONOMY_LOCALIZE) {
+            $term->name = tt("taxonomy:term:$term->tid:name", $term->name);
+          }
+          $items[] = '<div><div class="field-label-inline-first">' . $value['title'] . ':</div> ' . $term->name . '</div>';
+        }
+      }
+    }
+  }
+  return implode ('', $items);
 }
 
 /**
@@ -272,7 +430,7 @@ function cck_plan_fields_combine_term_widget_info() {
 function cck_plan_fields_combine_term_widget_settings($op, $widget) {
   switch ($op) {
     case 'form':
-      $form = array();
+      //$form = array();
       $form['min'] = array(
         '#type' => 'textfield',
         '#title' => t('Minimum'),
@@ -291,38 +449,48 @@ function cck_plan_fields_combine_term_widget_settings($op, $widget) {
       return array(
         'min',
         'max',
+        'weight_combine',
       );
     break;
   }
 }
 
+
+
+function combine_term_sort_weight($a, $b) {
+  $a_weight = is_array($a) && isset($a['weight']) ? $a['weight'] : 0;
+  $b_weight = is_array($b) && isset($b['weight']) ? $b['weight'] : 0;
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+  return $a_weight < $b_weight ? -1 : 1;
+}
+
+
 /**
 * Implementation of theme_cck_plan_fields_combine_term_table().
 */
 function theme_cck_plan_fields_combine_term_table($form = array()) {
+  $field = content_fields($form['#field_name'], $form['#type_name']);
   $headers = array();
   $rows = array();
   $row = array();
   $ftypes = array(
     'value' => t('Cantidad'),
-    'tid' => t('Term'),
   );
-  $backgrounds = array(
-    'tid' => 'blue',
-    'value' => 'black',
-  );
+  $count_vocabulary_default = isset($field['count_vocabulary']) ? $field['count_vocabulary'] : 0;
+  for($i = 0; $i <= $count_vocabulary_default; $i++) {
+    $idx1 = $i > 0? 'cck_plan_fields_simple_titulo_term_' . $i : 'cck_plan_fields_simple_titulo_term';
+    $idx = $i > 0? 'vid_' . $i : 'vid';
+    $ftypes[$idx] = isset($field[$idx1]) && !empty($field[$idx1]) ? $field[$idx1] : t('Term');
+  }
   if (isset($form['#title']) && $form['#title']) {
     $field = str_replace('_', '-', $form['#field_name']);
     $output .= '<div id="edit-' . $field . '-0-value-wrapper" class="form-item"><label for="edit-' . $field . '-0-value">' . $form['#title'] . '</label>';
   }
   $output = '<div">';
   foreach ($ftypes as $ftype => $label) {
-    if($ftype != 'tid') {
-      $output .= '<div style="float:left;margin-left:5px">' . drupal_render($form[$ftype]) . '</div>';
-    }
-    else {
-      $output .= '<div style="float:left;margin-left:5px">' . drupal_render($form[$ftype]) . '</div>';
-    }
+    $output .= '<div style="float:left;margin-left:5px">' . drupal_render($form[$ftype]) . '</div>';
   }
   $output .= drupal_render($form);
   $output .= '</div>'; 
@@ -338,49 +506,47 @@ function theme_cck_plan_fields_combine_term_table($form = array()) {
 function cck_plan_fields_combine_term_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   $field_name = $field['field_name'];
   $element = array();
-  $ftypes = array(
-    'tid' => !empty($field['cck_plan_fields_simple_titulo_term']) ? $field['cck_plan_fields_simple_titulo_term'] : t('Term'),
-    'value' => !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Monto'),
-  );
-  $ftypes['total'] = !empty($field['cck_plan_fields_simple_titulo']) ? $field['cck_plan_fields_simple_titulo'] : t('Total');
-  $class = $field_name . '_' . $delta . '_field';
-  $vid = $field['vid'];
-  $tree = taxonomy_get_tree($vid);
-  $options = array();
-  if ($tree) {
-    foreach ($tree as $term) {
-      if (isset($field['vtid'][$term->tid])) {
-        $choice = new stdClass();
-        $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
-        $options[] = $choice;
+  $weights = cck_plan_fields_combine_term_weight($field);
+  $i = 0;
+  foreach($weights as $value) {
+    if ($value['key'] == 'value') {
+      $class = $field_name . '_' . $delta . '_field';
+      $class1 = ' ' . $field_name . '_m' . $i . '_field' . ' ' . $field_name . '_dato_field';
+      $field_id = $i ? 'value_' . $i : 'value';
+      $field_id_form = $i ? 'value-' . $i : 'value';
+      $value = isset($items[$delta][$value['key']]) && $items[$delta][$value['key']] ? $items[$delta][$value['key']] : 0;
+      $value = isset($field['cck_plan_fields_simple_decimal']) ? str_replace('.', $field['cck_plan_fields_simple_decimal'], $value) : $value;
+      $element[$field_id] = array(
+
+
+        $element[$value['key']] = array(
+          '#type' => 'textfield',
+          //'#default_value' => isset($items[$delta][$value['key']]) && $items[$delta][$value['key']] ? $items[$delta][$value['key']] : 0,
+          '#default_value' => $value,
+          '#size' => 15,
+          '#attributes' => array('class' => $class . $class1 . ' number', 'onchange' => "suma('$class');sumatexto('" . $field_name . '_dato_field' . "');sumatexto('" . $field_name . '_m' . $i . '_field' . "');"),
+      );
+    }
+    else {
+      $tree = taxonomy_get_tree($field[$value['vid']]);
+      $options = array();
+      if ($tree) {
+        foreach ($tree as $term) {
+          if (isset($field[$value['vtid']][$term->tid])) {
+            $choice = new stdClass();
+            $choice->option = array($term->tid => str_repeat('-', $term->depth) . $term->name);
+            $options[] = $choice;
+          }
+        }
       }
+      $element[$value['key']] = array(
+        '#type' => 'select',
+        '#default_value' => isset($items[$delta][$value['key']]) ? $items[$delta][$value['key']] : NULL,
+        '#options' => $options,
+      );
+
     }
-  }
-  $element['tid'] = array(
-    '#type' => 'select',
-    '#default_value' => isset($items[$delta]['tid']) ? $items[$delta]['tid'] : NULL,
-    '#options' => $options,
-  );
-  if ($delta == 0) {
-    $element['tid']['#title'] = $ftypes['tid'];
-  }
-  for ($i = 0; $i < 1; $i++) {
-    $class1 = ' ' . $field_name . '_m' . $i . '_field' . ' ' . $field_name . '_dato_field';
-    $field_id = $i ? 'value_' . $i : 'value';
-    $field_id_form = $i ? 'value-' . $i : 'value';
-    $element[$field_id] = array(
-      '#type' => 'textfield',
-      '#default_value' => isset($items[$delta][$field_id]) && $items[$delta][$field_id] ? $items[$delta][$field_id] : 0,
-      '#size' => 15,
-      '#attributes' => array('class' => $class . $class1 . ' number', 'onchange' => "suma('$class');sumatexto('" . $field_name . '_dato_field' . "');sumatexto('" . $field_name . '_m' . $i . '_field' . "');"),
-    );
-    if ($delta == 0) {
-      $element[$field_id]['#title'] = $ftypes[$field_id];
-    }
-  }
-  $element['#theme'] = 'cck_plan_fields_combine_term_table';
-  if (empty($element['#element_validate'])) {
-    $element['#element_validate'] = array();
+    $element[$value['key']]['#title'] = $value['title'];
   }
   array_unshift($element['#element_validate'], 'cck_plan_fields_combine_term_validate');
   $form_state['#field_info'][$element['#field_name']] = $form['#field_info'][$field_name];
@@ -412,7 +578,9 @@ function cck_plan_fields_combine_term_validate($element, &$form_state) {
     foreach ($element['#columns'] as $ftype) {
       if ($ftype != 'tid' && !empty($element[$ftype]['#value'])) {
         $error_field = implode('][', $element['#parents']) .'][' . $ftype;
-        if (!is_numeric($element[$ftype]['#value'])) {
+        $start = $element[$ftype]['#value'];
+        $value = preg_replace('@[^-0-9\.]@', '', $start);
+        if (!is_numeric($value)) {
           form_set_error($error_field, t('Amount should be a number in %field.', array('%field' => t($field['widget']['label']))));
         }
         elseif ($field['cck_plan_fields_simple_type'] == 'int') {
