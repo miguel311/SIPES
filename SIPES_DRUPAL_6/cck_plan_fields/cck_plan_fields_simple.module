@@ -54,7 +54,6 @@ function cck_plan_fields_simple_field_settings($op, $field) {
         '#default_value' => !empty($field['cck_plan_fields_simple_type']) ? $field['cck_plan_fields_simple_type'] : 'int',
         '#options' => $types,
       );
-
       if ($field['cck_plan_fields_simple_type'] == 'float') {
         $form['cck_plan_fields_simple_precision'] = array(
           '#type' => 'select',
@@ -78,7 +77,6 @@ function cck_plan_fields_simple_field_settings($op, $field) {
           '#default_value' => !empty($field['cck_plan_fields_simple_decimal']) ? $field['cck_plan_fields_simple_decimal'] : '.',
         );
       }
-
       $form['cck_plan_fields_simple_titulo'] = array(
         '#type' => 'textfield',
         '#title' => t('Titulo del total'),
@@ -93,7 +91,7 @@ function cck_plan_fields_simple_field_settings($op, $field) {
         'cck_plan_fields_simple_titulo',
         'cck_plan_fields_simple_precision',
         'cck_plan_fields_simple_scale',
-        'cck_plan_fields_simple_decimal',
+        'cck_plan_fields_simple_decimal'
       );
       return $save_settings;
     case 'database columns':
@@ -102,6 +100,8 @@ function cck_plan_fields_simple_field_settings($op, $field) {
         'int' => t('Integer'),
         'float' => t('Floar'),
       );
+//2400
+
 
       if ($field['cck_plan_fields_simple_type'] == 'int') {
         for ($i = 0; $i < 12; $i++) {
@@ -129,7 +129,6 @@ function cck_plan_fields_simple_field_settings($op, $field) {
         }
       }
 
-      }
       return $columns;
     case 'views data':
       $data = content_views_field_views_data($field);
@@ -601,7 +600,6 @@ function cck_plan_fields_simple_validate($element, &$form_state) {
     }
   }
 }
-
 
 /**
  * Implementation of hook_feeds_node_processor_targets_alter().

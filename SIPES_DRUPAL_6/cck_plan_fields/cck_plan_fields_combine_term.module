@@ -516,9 +516,6 @@ function cck_plan_fields_combine_term_widget(&$form, &$form_state, $field, $item
       $field_id_form = $i ? 'value-' . $i : 'value';
       $value = isset($items[$delta][$value['key']]) && $items[$delta][$value['key']] ? $items[$delta][$value['key']] : 0;
       $value = isset($field['cck_plan_fields_simple_decimal']) ? str_replace('.', $field['cck_plan_fields_simple_decimal'], $value) : $value;
-      $element[$field_id] = array(
-
-
         $element[$value['key']] = array(
           '#type' => 'textfield',
           //'#default_value' => isset($items[$delta][$value['key']]) && $items[$delta][$value['key']] ? $items[$delta][$value['key']] : 0,
